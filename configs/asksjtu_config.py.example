@@ -8,4 +8,8 @@ KNOWLEDGE_BASE_PATH = ""
 SALT = ""
 
 # streamlit analysis 设置
-ANALYSIS_PATH = ""
+ANALYTICS_PATH = ""
+
+# 管理员页面认证设置
+JWT_SECRET = ""
+AUTH_PASSWORD = ""

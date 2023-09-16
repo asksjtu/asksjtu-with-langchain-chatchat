@@ -4,6 +4,7 @@ from webui_pages.utils import *
 from streamlit_option_menu import option_menu
 from webui_pages import *
 from webui_pages.asksjtu_stylehack import style_hack
+from webui_pages.asksjtu_analytics import analytics_page
 import os
 import jwt
 from datetime import datetime, timedelta
@@ -92,6 +93,10 @@ if __name__ == "__main__":
         "知识库管理": {
             "icon": "hdd-stack",
             "func": knowledge_base_page,
+        },
+        "访问统计": {
+            "icon": "graph-up",
+            "func": analytics_page,
         },
     }
 

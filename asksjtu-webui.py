@@ -6,7 +6,7 @@
 
 import streamlit as st
 from streamlit_option_menu import option_menu
-from configs.asksjtu_config import ANALYSIS_PATH
+from configs.asksjtu_config import ANALYTICS_PATH
 from webui_pages.utils import *
 from webui_pages.asksjtu_stylehack import style_hack
 from webui_pages.asksjtu_dialogue import dialogue_page
@@ -27,7 +27,7 @@ if __name__ == "__main__":
 
     style_hack()
 
-    streamlit_analytics.start_tracking()
+    streamlit_analytics.start_tracking(load_from_json=ANALYTICS_PATH)
 
     pages = {
         "对话": {
@@ -62,4 +62,4 @@ if __name__ == "__main__":
     if selected_page in pages:
         pages[selected_page]["func"](api)
 
-    streamlit_analytics.stop_tracking(save_to_json=ANALYSIS_PATH)
+    streamlit_analytics.stop_tracking(save_to_json=ANALYTICS_PATH)

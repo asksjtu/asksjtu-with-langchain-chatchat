@@ -1,0 +1,15 @@
+# 默认知识库
+DEFAULT_KNOWLEDGE_BASE_NAME = "常用知识库"
+
+# 知识库路径
+KNOWLEDGE_BASE_PATH = ""
+
+# 知识库匹配 Salt
+SALT = ""
+
+# streamlit analysis 设置
+ANALYTICS_PATH = ""
+
+# 管理员页面认证设置
+JWT_SECRET = ""
+AUTH_PASSWORD = ""

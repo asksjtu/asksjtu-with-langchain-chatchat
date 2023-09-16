@@ -12,6 +12,8 @@ from webui_pages.asksjtu_stylehack import style_hack
 from webui_pages.asksjtu_dialogue import dialogue_page
 from webui_pages.asksjtu_disclaimer import disclaimer_page
 import os
+import random
+import string
 import streamlit_analytics
 
 api = ApiRequest(base_url=api_address())
@@ -37,7 +39,7 @@ if __name__ == "__main__":
         "免责声明": {
             "icon": "exclamation-octagon",
             "func": disclaimer_page,
-        }
+        },
     }
 
     with st.sidebar:
@@ -62,4 +64,11 @@ if __name__ == "__main__":
     if selected_page in pages:
         pages[selected_page]["func"](api)
 
-    streamlit_analytics.stop_tracking(save_to_json=ANALYTICS_PATH)
+    def generate_random_string():
+        return "".join(
+            random.choice(string.ascii_letters + string.digits) for _ in range(16)
+        )
+
+    streamlit_analytics.stop_tracking(
+        save_to_json=ANALYTICS_PATH, unsafe_password=generate_random_string()
+    )

@@ -5,17 +5,14 @@
 # 4. 运行WEB UI：streamlit run webui.py --server.port 7860
 
 import streamlit as st
-from st_pages import hide_pages
 from streamlit_option_menu import option_menu
 from configs.asksjtu_config import ANALYSIS_PATH
 from webui_pages.utils import *
 from webui_pages.asksjtu_stylehack import style_hack
-from webui_pages import *
 from webui_pages.asksjtu_dialogue import dialogue_page
 from webui_pages.asksjtu_disclaimer import disclaimer_page
 import os
 import streamlit_analytics
-import json
 
 api = ApiRequest(base_url=api_address())
 
@@ -29,8 +26,6 @@ if __name__ == "__main__":
     )
 
     style_hack()
-
-    hide_pages(["admin"])
 
     streamlit_analytics.start_tracking()
 

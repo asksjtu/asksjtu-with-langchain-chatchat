@@ -4,9 +4,17 @@ import requests
 import json
 import logging
 
+from server.knowledge_base.utils import (
+    get_doc_path as get_kb_doc_path,
+    get_file_path as get_kb_file_path,
+)
+from server.knowledge_base.kb_doc_api import update_docs
 from configs.server_config import API_SERVER
-
-# !!! export CUDA_VISIBLE_DEVICES=1 !!!
+from configs.kb_config import (
+    CHUNK_SIZE,
+    OVERLAP_SIZE,
+    ZH_TITLE_ENHANCE,
+)
 
 
 class Base_XSTZFetcher:
@@ -68,18 +76,17 @@ class Base_XSTZFetcher:
         if self.name == "not specified":
             raise Exception("not specified fetcher for xstz")
         indexes = self.get_indexes()
-        fh = open(filename, "w")
-        fh.write(self.name + " 面向学生的通知\n\n")
-        fh.write(
-            "\n".join([item[0] + " 网址 " + self.base_url + item[1] for item in indexes])
-        )
-        fh.write("\n\n\n")
-        for title, index_url in indexes:
-            logging.info(f"fetching title: {title}, url: {self.base_url}{index_url}")
-            news = self.get_newspiece(index_url)
-            fh.write(title + "\n")
-            fh.write(news + "\n\n")
-        fh.close()
+        with open(filename, "w") as fh:
+            fh.write(self.name + " 面向学生的通知\n\n")
+            fh.write(
+                "\n".join([item[0] + " 网址 " + self.base_url + item[1] for item in indexes])
+            )
+            fh.write("\n\n\n")
+            for title, index_url in indexes:
+                logging.info(f"fetching title: {title}, url: {self.base_url}{index_url}")
+                news = self.get_newspiece(index_url)
+                fh.write(title + "\n")
+                fh.write(news + "\n\n")
         logging.info("wrote {} news pieces into {}".format(len(indexes), filename))
 
 
@@ -135,46 +142,26 @@ class ME_XSTZFetcher(Base_XSTZFetcher):
         self.link_re = re.compile(r'<a href="https://me.sjtu.edu.cn/(.*?)">')
 
 
-if __name__ == "__main__":
-    comn_kb_name = "常用知识库"
-    xstz_filepath = os.path.join(os.getcwd(), "knowledge_base/常用知识库/content/")
+def update_xstz(kb_name: str):
     fetchers = [
         ("05-教务处学生通知.txt", JWC_XSTZFetcher()),
         ("06-电院学生通知.txt", SEIEE_XSTZFetcher()),
         ("07-机动学生通知.txt", ME_XSTZFetcher()),
     ]
-    url_update_doc = (
-        f'http://{API_SERVER["host"]}:{API_SERVER["port"]}/knowledge_base/update_docs'
-    )
-    headers = {"Content-Type": "application/json", "Accept": "application/json"}
-    request_body = {
-        "knowledge_base_name": comn_kb_name,
-        "file_name": "",
-        "not_refresh_vs_cache": False,
-    }
-    request_body = {
-        "knowledge_base_name": comn_kb_name,
-        "file_names": [],
-        "chunk_size": 320,
-        "chunk_overlap": 50,
-        "zh_title_enhance": False,
-        "override_custom_docs": False,
-        "docs": r"{}",
-        "not_refresh_vs_cache": False,
-    }
+
     for filename, fetcher in fetchers:
-        xstz_filename = os.path.join(xstz_filepath, filename)
-        logging.info(f"updating {xstz_filename}")
-        if os.path.exists(xstz_filename):
-            os.remove(xstz_filename)
-        fetcher.download(xstz_filename)
-        request_body["file_names"].append(filename)
-    logging.info(f"download completed, begin posting to url: {url_update_doc}")
-    response = requests.post(url_update_doc, json.dumps(request_body), headers=headers)
-    if response.status_code == 200:
-        logging.info("OK")
-    elif response.status_code == 422:
-        content = json.loads(response.content)
-        logging.error(f"code 422, msg: {content}")
-    else:
-        logging.error(f"error code: {response.status_code}")
+        fetcher.download(get_kb_file_path(kb_name, filename))
+
+    filenames = [item[0] for item in fetchers]
+    update_docs(
+        knowledge_base_name=kb_name,
+        file_names=filenames,
+        chunk_size=CHUNK_SIZE,
+        chunk_overlap=OVERLAP_SIZE,
+        zh_title_enhance=ZH_TITLE_ENHANCE,
+        override_custom_docs=False,
+        docs={},
+        not_refresh_vs_cache=False,
+    )
+
+    logging.info(f"download completed, updating knowledge base {kb_name}")

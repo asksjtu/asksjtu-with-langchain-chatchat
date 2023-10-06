@@ -15,14 +15,11 @@ from server.chat import (chat, knowledge_base_chat, openai_chat,
                          search_engine_chat, agent_chat)
 from server.knowledge_base.kb_api import list_kbs, create_kb, delete_kb
 from server.knowledge_base.kb_doc_api import (list_files, upload_docs, delete_docs,
-                                              update_docs, recreate_vector_store,
+                                              update_docs, download_doc, recreate_vector_store,
                                               search_docs, DocumentWithScore)
 from server.llm_api import list_running_models, list_config_models, change_llm_model, stop_llm_model
 from server.utils import BaseResponse, ListResponse, FastAPI, MakeFastAPIOffline
 from typing import List
-
-# use custom version of download file
-from server.asksjtu_api import download_doc
 
 nltk.data.path = [NLTK_DATA_PATH] + nltk.data.path
 

@@ -15,9 +15,6 @@ import os
 from urllib.parse import urlencode
 from server.knowledge_base.kb_doc_api import search_docs
 
-from configs.asksjtu_config import KB_DOWNLOAD_BASE_URL, SALT
-import hashlib
-
 
 async def knowledge_base_chat(query: str = Body(..., description="用户输入", examples=["你好"]),
                             knowledge_base_name: str = Body(..., description="知识库名称", examples=["samples"]),
@@ -78,30 +75,31 @@ async def knowledge_base_chat(query: str = Body(..., description="用户输入",
             if local_doc_url:
                 url = "file://" + doc.metadata["source"]
             else:
-                # parameters = urlencode({"knowledge_base_name": knowledge_base_name, "file_name":filename})
-                # url = f"{request.base_url}knowledge_base/download_doc?" + parameters
-                parameters = urlencode({
-                    "knowledge_base_hash": hashlib.sha256(
-                        knowledge_base_name.encode() + SALT.encode()
-                    ).hexdigest(),
-                    "file_name": filename,
-                })
-                base_url = KB_DOWNLOAD_BASE_URL if KB_DOWNLOAD_BASE_URL else request.base_url
-                url = f"{base_url}knowledge_base/download_doc?" + parameters
+                parameters = urlencode({"knowledge_base_name": knowledge_base_name, "file_name":filename})
+                url = f"{request.base_url}knowledge_base/download_doc?" + parameters
             text = f"""出处 [{inum + 1}] [{filename}]({url}) \n\n{doc.page_content}\n\n"""
             source_documents.append(text)
+
+        source_documents_json = [
+            dict(
+                filename=os.path.split(doc.metadata["source"])[-1],
+                content=doc.page_content,
+                kb_name=knowledge_base_name,
+            ) for doc in docs
+        ]
 
         if stream:
             async for token in callback.aiter():
                 # Use server-sent-events to stream the response
                 yield json.dumps({"answer": token}, ensure_ascii=False)
-            yield json.dumps({"docs": source_documents}, ensure_ascii=False)
+            yield json.dumps({"docs": source_documents, "docs_json": source_documents_json}, ensure_ascii=False)
         else:
             answer = ""
             async for token in callback.aiter():
                 answer += token
             yield json.dumps({"answer": answer,
-                              "docs": source_documents},
+                              "docs": source_documents,
+                              "docs_json": source_documents_json},
                              ensure_ascii=False)
 
         await task

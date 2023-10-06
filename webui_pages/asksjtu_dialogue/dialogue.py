@@ -1,14 +1,15 @@
 import streamlit as st
-from configs.server_config import FSCHAT_MODEL_WORKERS
 from configs.model_config import LLM_MODEL, TEMPERATURE, HISTORY_LEN
-from configs.asksjtu_config import DEFAULT_KNOWLEDGE_BASE_NAME, SALT
+from configs.asksjtu_config import DEFAULT_KNOWLEDGE_BASE_NAME, SALT, KB_DOWNLOAD_BASE_URL
+from askadmin.utils import kb_name_to_hash
 from webui_pages.utils import *
 from streamlit_chatbox import *
 from datetime import datetime
 import os
-import hashlib
-from server.utils import get_model_worker_config
+from server.knowledge_base.utils import get_file_path as get_kb_file_path
 from typing import List, Dict
+
+from .widgets import DownloadButtons, DownloadButtonProps
 
 
 chat_box = ChatBox(
@@ -44,6 +45,10 @@ def get_messages_history(history_len: int) -> List[Dict]:
     return history[-i:]
 
 
+def get_slug_of_kb(kb_name: str) -> str:
+    return kb_name_to_hash(kb_name)
+
+
 def dialogue_page(api: ApiRequest):
     chat_box.init_session()
 
@@ -73,7 +78,7 @@ def dialogue_page(api: ApiRequest):
         # filter and get first
         knowledge_base = next(
             filter(
-                lambda kb: hashlib.sha256(kb + SALT) == knowledge_base_hash,
+                lambda kb: kb_name_to_hash(kb) == knowledge_base_hash,
                 knowledge_base_list,
             ),
             None # default value
@@ -94,12 +99,11 @@ def dialogue_page(api: ApiRequest):
         history = get_messages_history(history_len)
         chat_box.user_say(prompt)
         history = get_messages_history(history_len)
-        chat_box.ai_say(
-            [
+        chat_box.ai_say([
                 f"正在查询知识库 `{selected_kb}` ...",
-                Markdown("...", in_expander=True, title="知识库匹配结果"),
-            ]
-        )
+                Markdown("...", in_expander=True, title="知识库匹配结果", state="complete"),
+                DownloadButtons([]), 
+            ])
         text = ""
         for d in api.knowledge_base_chat(
             prompt,
@@ -114,9 +118,32 @@ def dialogue_page(api: ApiRequest):
                 st.error(error_msg)
             elif chunk := d.get("answer"):
                 text += chunk
-                chat_box.update_msg(text, 0)
-        chat_box.update_msg(text, 0, streaming=False)
-        chat_box.update_msg("\n\n".join(d.get("docs", [])), 1, streaming=False)
+                chat_box.update_msg(text, element_index=0)
+        chat_box.update_msg(text, element_index=0, streaming=False)
+        # concat docs string
+        docs = []
+        for inum, doc in enumerate(d.get("docs_json", [])):
+            filename, kb_name, content = doc["filename"], doc["kb_name"], doc["content"]
+            text = f"""出处 [{inum + 1}] **{filename}** \n\n{content}\n\n"""
+            docs.append(text)
+        chat_box.update_msg("\n\n".join(docs), element_index=1, streaming=False)
+
+        source_names = set()
+        sources = []
+        for inum, doc in enumerate(d.get("docs_json", [])):
+            filename, kb_name, content = doc["filename"], doc["kb_name"], doc["content"]
+            # remove duplicate
+            if filename in source_names:
+                continue
+            else:
+                source_names.add(filename)
+            # append to sources
+            filepath = get_kb_file_path(kb_name, filename)
+            if os.path.exists(filepath):
+                sources.append(
+                    DownloadButtonProps(name=filename, path=get_kb_file_path(kb_name, filename))
+                )
+        chat_box.update_msg(DownloadButtons(sources), element_index=2, streaming=False)
 
     now = datetime.now()
     with st.sidebar:

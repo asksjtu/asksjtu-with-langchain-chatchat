@@ -124,15 +124,6 @@ def dialogue_page(api: ApiRequest):
         docs = []
         for inum, doc in enumerate(d.get("docs_json", [])):
             filename, kb_name, content = doc["filename"], doc["kb_name"], doc["content"]
-            # construct URL
-            # params = urlencode({
-            #     "filename": filename,
-            #     "kb_slug": get_slug_of_kb(kb_name),
-            # })
-            # url = f"{KB_DOWNLOAD_BASE_URL}knowledge_base/download_doc?" + params
-            # url = "/?action=download&" + params
-            # construct content
-            # text = f"""出处 [{inum + 1}] [{filename}]({url}) \n\n{content}\n\n"""
             text = f"""出处 [{inum + 1}] **{filename}** \n\n{content}\n\n"""
             docs.append(text)
         chat_box.update_msg("\n\n".join(docs), element_index=1, streaming=False)
@@ -149,9 +140,6 @@ def dialogue_page(api: ApiRequest):
             # append to sources
             filepath = get_kb_file_path(kb_name, filename)
             if os.path.exists(filepath):
-                sources.append(
-                    DownloadButtonProps(name=filename, path=get_kb_file_path(kb_name, filename))
-                )
                 sources.append(
                     DownloadButtonProps(name=filename, path=get_kb_file_path(kb_name, filename))
                 )

@@ -1,5 +1,5 @@
 from dataclasses import dataclass, asdict
-from typing import List, Literal, Any
+from typing import List, Any
 from streamlit_chatbox import OutputElement
 import streamlit as st
 import json
@@ -17,11 +17,7 @@ class DownloadButtons(OutputElement):
         self,
         content: DownloadButtonProps | List[DownloadButtonProps] = "",
         cols: int = 4,
-        output_method: str = "markdown",
-        title: str = "",
-        in_expander: bool = False,
-        expanded: bool = False,
-        state: Literal["running", "complete", "error"] = "running",
+        *args: Any,
         **kwargs: Any
     ) -> None:
         """
@@ -32,7 +28,7 @@ class DownloadButtons(OutputElement):
             content = [content]
         _content = json.dumps([asdict(c) for c in content])
         super().__init__(
-            _content, output_method, title, in_expander, expanded, state, **kwargs
+            _content, *args, **kwargs,
         )
 
     @property

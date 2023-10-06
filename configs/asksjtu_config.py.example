@@ -10,6 +10,3 @@ ANALYTICS_PATH = ""
 # 管理员页面认证设置
 JWT_SECRET = ""
 AUTH_PASSWORD = ""
-
-# 知识库文件下载 API Base URL
-KB_DOWNLOAD_BASE_URL = ""

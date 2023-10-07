@@ -1,5 +1,5 @@
 from dataclasses import dataclass, asdict
-from typing import List, Any
+from typing import List, Any, Union
 from streamlit_chatbox import OutputElement
 import streamlit as st
 import json
@@ -15,7 +15,7 @@ class DownloadButtonProps:
 class DownloadButtons(OutputElement):
     def __init__(
         self,
-        content: DownloadButtonProps | List[DownloadButtonProps] = "",
+        content: Union[DownloadButtonProps, List[DownloadButtonProps]] = [],
         cols: int = 4,
         *args: Any,
         **kwargs: Any

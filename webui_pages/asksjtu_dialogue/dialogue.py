@@ -1,6 +1,6 @@
 import streamlit as st
 from configs.model_config import LLM_MODEL, TEMPERATURE, HISTORY_LEN
-from configs.asksjtu_config import DEFAULT_KNOWLEDGE_BASE_NAME, SALT, KB_DOWNLOAD_BASE_URL
+from configs.asksjtu_config import DEFAULT_KNOWLEDGE_BASE_NAME
 from askadmin.utils import kb_name_to_hash
 from webui_pages.utils import *
 from streamlit_chatbox import *

@@ -92,6 +92,13 @@ def dialogue_page(api: ApiRequest):
     # Display chat messages from history on app rerun
 
     chat_box.output_messages()
+    if 'isWelcomeSaid' not in st.session_state:
+        st.session_state.isWelcomeSaid=False
+    if not st.session_state.isWelcomeSaid:
+        st.session_state.isWelcomeSaid=True
+        chat_box.ai_say(
+            [Markdown("欢迎使用交大智讯，一个用于回答校园相关问题的大语言模型。")]
+        )
 
     chat_input_placeholder = "请输入对话内容，换行请使用Shift+Enter "
 

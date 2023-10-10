@@ -17,7 +17,7 @@ from configs.kb_config import (
 )
 
 
-class Base_XSTZFetcher:
+class BaseStuNotiFetcher:
     def __init__(self) -> None:
         self.base_url = "not specified"
         self.index_page = "not specified"
@@ -90,7 +90,7 @@ class Base_XSTZFetcher:
         logging.info("wrote {} news pieces into {}".format(len(indexes), filename))
 
 
-class JWC_XSTZFetcher(Base_XSTZFetcher):
+class JWCStuNotiFetcher(BaseStuNotiFetcher):
     def __init__(self) -> None:
         super().__init__()
         self.base_url = "http://www.jwc.sjtu.edu.cn/"
@@ -101,7 +101,7 @@ class JWC_XSTZFetcher(Base_XSTZFetcher):
         self.link_re = re.compile(r'<a href="../(.*?)">')
 
 
-class SEIEE_XSTZFetcher(Base_XSTZFetcher):
+class SEIEEStuNotiFetcher(BaseStuNotiFetcher):
     def __init__(self) -> None:
         super().__init__()
         self.base_url = "https://www.seiee.sjtu.edu.cn/"
@@ -129,7 +129,7 @@ class SEIEE_XSTZFetcher(Base_XSTZFetcher):
         return self.get_index_from_text(text_json["content"])
 
 
-class ME_XSTZFetcher(Base_XSTZFetcher):
+class MEStuNotiFetcher(BaseStuNotiFetcher):
     def __init__(self) -> None:
         super().__init__()
         self.base_url = "https://me.sjtu.edu.cn/"
@@ -142,11 +142,11 @@ class ME_XSTZFetcher(Base_XSTZFetcher):
         self.link_re = re.compile(r'<a href="https://me.sjtu.edu.cn/(.*?)">')
 
 
-def update_xstz(kb_name: str):
+def update_stu_noti(kb_name: str):
     fetchers = [
-        ("05-教务处学生通知.txt", JWC_XSTZFetcher()),
-        ("06-电院学生通知.txt", SEIEE_XSTZFetcher()),
-        ("07-机动学生通知.txt", ME_XSTZFetcher()),
+        ("05-教务处学生通知.txt", JWCStuNotiFetcher()),
+        ("06-电院学生通知.txt", SEIEEStuNotiFetcher()),
+        ("07-机动学生通知.txt", MEStuNotiFetcher()),
     ]
 
     for filename, fetcher in fetchers:

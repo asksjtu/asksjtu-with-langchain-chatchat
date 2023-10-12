@@ -123,7 +123,7 @@ def add_kb(username: str, kb_name: str):
     if not user:
         rich.print("[red]user not found[/red]")
         return
-    kb = KBManager().get(name=kb_name)
+    kb = kb_manager.get(name=kb_name)
     if not kb:
         rich.print("[red]knowledge base not found[/red]")
         return
@@ -138,7 +138,7 @@ def remove_kb(username: str, kb_name: str):
     if not user:
         rich.print("[red]user not found[/red]")
         return
-    kb = KBManager().get(name=kb_name)
+    kb = kb_manager.get(name=kb_name)
     if not kb:
         rich.print("[red]knowledge base not found[/red]")
         return

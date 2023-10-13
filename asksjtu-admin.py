@@ -1,61 +1,20 @@
+import os
 import streamlit as st
-import extra_streamlit_components as stx
-from webui_pages.utils import *
 from streamlit_option_menu import option_menu
+
+from askadmin.manager import UserManager, KBManager
+from webui_pages.utils import *
 from webui_pages import *
+from webui_pages.asksjtu_admin.components import Auth
 from webui_pages.asksjtu_stylehack import style_hack
 from webui_pages.asksjtu_analytics import analytics_page
-import os
-import jwt
-from datetime import datetime, timedelta
+from webui_pages.asksjtu_knowledge_base import user_knowledge_base_page
+from webui_pages.asksjtu_knowledge_base import admin_knowledge_base_page
 from configs import VERSION
-from configs.asksjtu_config import JWT_SECRET, AUTH_PASSWORD
 from server.utils import api_address
 
 
 api = ApiRequest(base_url=api_address())
-
-
-class Auth:
-    COOKLE_NAME = "jwt"
-
-    def __init__(self) -> None:
-        self.manager = stx.CookieManager()
-        self.jwt_secret = JWT_SECRET
-
-    @property
-    def is_authenticated(self):
-        return self.verify_jwt()
-
-    def sign_jwt(self) -> str:
-        payload = {
-            "exp": datetime.utcnow() + timedelta(days=7),
-        }
-        return jwt.encode(payload, self.jwt_secret, algorithm="HS256")
-
-    def verify_jwt(self) -> bool:
-        try:
-            jwt.decode(
-                self.manager.get(self.COOKLE_NAME),
-                self.jwt_secret,
-                algorithms=["HS256"],
-            )
-            return True
-        except jwt.DecodeError:
-            return False
-        except jwt.ExpiredSignatureError:
-            return False
-
-    def login(self, password) -> bool:
-        if password != AUTH_PASSWORD:
-            print("login failed")
-            return False
-        print("login success")
-        self.manager.set(self.COOKLE_NAME, self.sign_jwt())
-        return True
-
-    def logout(self):
-        self.manager.delete(self.COOKLE_NAME)
 
 
 if __name__ == "__main__":
@@ -71,11 +30,8 @@ if __name__ == "__main__":
     )
 
     auth = Auth()
-    if not auth.is_authenticated:
-        st.error("请登录", icon="🚨")
-        password = st.text_input("密码", type="password", key="password")
-        st.button("登录", on_click=lambda: auth.login(password))
-        st.stop()
+
+    auth.display_login_form(always_show=False, stop_if_not_login=True)
 
     style_hack()
 
@@ -85,20 +41,18 @@ if __name__ == "__main__":
             f"当前使用模型`{LLM_MODEL}`, 您可以开始提问了."
         )
 
-    pages = {
-        "对话": {
-            "icon": "chat",
-            "func": dialogue_page,
-        },
-        "知识库管理": {
-            "icon": "hdd-stack",
-            "func": knowledge_base_page,
-        },
-        "访问统计": {
-            "icon": "graph-up",
-            "func": analytics_page,
-        },
-    }
+    if auth.user and auth.user.get("role", UserManager.ROLE_USER) == UserManager.ROLE_ADMIN:
+        # unlock all features
+        pages = {
+            "对话": {"icon": "chat", "func": dialogue_page},
+            "知识库管理": {"icon": "hdd-stack", "func": admin_knowledge_base_page},
+            "访问统计": {"icon": "graph-up", "func": analytics_page},
+        }
+    else:
+        # normal user
+        pages = {
+            "知识库管理": {"icon": "hdd-stack", "func": user_knowledge_base_page},
+        }
 
     with st.sidebar:
         st.image(os.path.join("img/asksjtu", "SJTU-logo.png"), use_column_width=True)

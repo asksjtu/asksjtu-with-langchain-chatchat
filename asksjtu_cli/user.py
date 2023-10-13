@@ -87,9 +87,14 @@ def create(
 
 
 @user.command()
+@click.option("--username", type=str, required=True)
 def reset_password(username: str):
-    password = Prompt("Enter your password", password=True)
-    confirm_password = Prompt("Confirm your password", password=True)
+    user = manager.get(username=username)
+    if not user:
+        rich.print("[red]user not found[/red]")
+        return
+    password = Prompt.ask("Enter your password", password=True)
+    confirm_password = Prompt.ask("Confirm your password", password=True)
     if password != confirm_password:
         rich.print("[red]password not match[/red]")
         return

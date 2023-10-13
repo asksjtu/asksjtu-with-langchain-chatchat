@@ -74,7 +74,7 @@ class UserManager:
         Check if the given password and the password in database is matched
         """
         user = db.user.get(Query().username == username)
-        return user.get("password") == self.hash_password(password)
+        return user and user.get("password") == self.hash_password(password)
 
     def list(self):
         return db.user.all()
@@ -89,8 +89,9 @@ class UserManager:
         """
         if username:
             return db.user.get(Query().username == username, doc_id=pk)
-        else:
+        elif pk:
             return db.user.get(doc_id=pk)
+        return None
 
     def add_kb(self, user_pk: int, kb_pk: int, skip_check: bool = False):
         """

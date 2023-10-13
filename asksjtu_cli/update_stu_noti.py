@@ -1,15 +1,10 @@
 import re
-import os
 import requests
 import json
 import logging
 
-from server.knowledge_base.utils import (
-    get_doc_path as get_kb_doc_path,
-    get_file_path as get_kb_file_path,
-)
+from server.knowledge_base.utils import get_file_path as get_kb_file_path
 from server.knowledge_base.kb_doc_api import update_docs
-from configs.server_config import API_SERVER
 from configs.kb_config import (
     CHUNK_SIZE,
     OVERLAP_SIZE,
@@ -79,11 +74,15 @@ class BaseStuNotiFetcher:
         with open(filename, "w") as fh:
             fh.write(self.name + " 面向学生的通知\n\n")
             fh.write(
-                "\n".join([item[0] + " 网址 " + self.base_url + item[1] for item in indexes])
+                "\n".join(
+                    [item[0] + " 网址 " + self.base_url + item[1] for item in indexes]
+                )
             )
             fh.write("\n\n\n")
             for title, index_url in indexes:
-                logging.info(f"fetching title: {title}, url: {self.base_url}{index_url}")
+                logging.info(
+                    f"fetching title: {title}, url: {self.base_url}{index_url}"
+                )
                 news = self.get_newspiece(index_url)
                 fh.write(title + "\n")
                 fh.write(news + "\n\n")

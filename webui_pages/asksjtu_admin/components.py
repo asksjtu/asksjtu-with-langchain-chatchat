@@ -13,7 +13,9 @@ class Auth:
     COOKLE_NAME = "jwt"
     STATE_WRONG_PASSWORD = "WRONG_PASSWORD"
 
-    def __init__(self, key: Optional[str] = 'init', jwt_secret: Optional[str] = None) -> None:
+    def __init__(
+        self, key: Optional[str] = "init", jwt_secret: Optional[str] = None
+    ) -> None:
         self.user_manager = UserManager()
         self.manager = stx.CookieManager(key=key)
         self.jwt_secret = jwt_secret if jwt_secret is not None else JWT_SECRET
@@ -56,6 +58,7 @@ class Auth:
         """
         return user if the credentials are correct
         """
+        print(f"Attempt to login with {username} and {password}")
         if not self.user_manager.check_password(username, password):
             self.mark_wrong_password()
             return None
@@ -72,14 +75,21 @@ class Auth:
         self, always_show: bool = False, stop_if_not_login: bool = True
     ) -> None:
         if always_show or not self.is_authenticated:
-            with st.form('login_form'):
+            with st.form("login_form"):
                 if self.is_wrong_password:
                     st.error("账号或密码错误", icon="🚨")
                 else:
                     st.warning("请登录", icon="🚨")
-                username = st.text_input("用户名", type="default", key="username")
-                password = st.text_input("密码", type="password", key="password")
-                st.form_submit_button("登录", on_click=lambda: self.login(username, password))
+                st.text_input("用户名", type="default", key="username")
+                st.text_input("密码", type="password", key="password")
+                # cannot directly pass username and password to login function
+                # checkout https://docs.streamlit.io/library/advanced-features/forms
+                st.form_submit_button(
+                    "登录",
+                    on_click=lambda: self.login(
+                        st.session_state.username, st.session_state.password
+                    ),
+                )
         if stop_if_not_login and not self.is_authenticated:
             st.stop()
 
@@ -96,5 +106,5 @@ class Auth:
 
     @classmethod
     def clear_wrong_password(cls):
-        if Auth.STATE_WRONG_PASSWORD in st.session_state:
-            del st.session_state[cls.STATE_WRONG_PASSWORD]
+        if cls.STATE_WRONG_PASSWORD in st.session_state:
+            st.session_state[cls.STATE_WRONG_PASSWORD] = False

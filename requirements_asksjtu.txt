@@ -1,5 +1,6 @@
 streamlit-analytics
 extra_streamlit_components
-jwt
+PyJWT
+tinydb
 click
 rich

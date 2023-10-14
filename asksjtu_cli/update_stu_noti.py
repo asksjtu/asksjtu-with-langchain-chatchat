@@ -69,24 +69,20 @@ class BaseStuNotiFetcher:
 
     def download(self, filename: str) -> None:
         if self.name == "not specified":
-            raise Exception("not specified fetcher for xstz")
+            raise Exception("not specified fetcher for student notification")
         indexes = self.get_indexes()
         with open(filename, "w") as fh:
-            fh.write(self.name + " 面向学生的通知\n\n")
-            fh.write(
-                "\n".join(
-                    [item[0] + " 网址 " + self.base_url + item[1] for item in indexes]
-                )
-            )
-            fh.write("\n\n\n")
+            fh.write(f"# {self.name} 面向学生的通知\n\n")
             for title, index_url in indexes:
                 logging.info(
                     f"fetching title: {title}, url: {self.base_url}{index_url}"
                 )
                 news = self.get_newspiece(index_url)
-                fh.write(title + "\n")
+                fh.write(
+                    f"## [{title}]({self.base_url}{index_url})\n\n"
+                )
                 fh.write(news + "\n\n")
-        logging.info("wrote {} news pieces into {}".format(len(indexes), filename))
+        logging.info(f"wrote {len(indexes)} news pieces into {filename}")
 
 
 class JWCStuNotiFetcher(BaseStuNotiFetcher):
@@ -143,9 +139,9 @@ class MEStuNotiFetcher(BaseStuNotiFetcher):
 
 def update_stu_noti(kb_name: str):
     fetchers = [
-        ("05-教务处学生通知.txt", JWCStuNotiFetcher()),
-        ("06-电院学生通知.txt", SEIEEStuNotiFetcher()),
-        ("07-机动学生通知.txt", MEStuNotiFetcher()),
+        ("05-教务处学生通知.md", JWCStuNotiFetcher()),
+        ("06-电院学生通知.md", SEIEEStuNotiFetcher()),
+        ("07-机动学生通知.md", MEStuNotiFetcher()),
     ]
 
     for filename, fetcher in fetchers:

@@ -60,8 +60,9 @@ def knowledge_base_page(api: ApiRequest):
         st.error("获取知识库信息错误，请检查是否已按照 `README.md` 中 `4 知识库初始化与迁移` 步骤完成初始化或迁移，或是否为数据库连接错误。")
         st.stop()
 
-    managed_kbs = kb_manager.get(kb_pk__in=auth.user.get("kbs", []))
-    managed_kb_names = set([kb["name"] for kb in managed_kbs])
+    # make sure managed_kbs is not None
+    managed_kbs: List = kb_manager.get(kb_pk__in=auth.user.get("kbs", [])) or []
+    managed_kb_names = set([kb.get("name", None) for kb in managed_kbs])
     system_kb_names = set(kb_list.keys())
     # only allowed kb can be managed
     kb_names = list(managed_kb_names & system_kb_names)
@@ -83,6 +84,12 @@ def knowledge_base_page(api: ApiRequest):
         format_func=format_selected_kb,
         index=selected_kb_index
     )
+
+    # handle if the user has no kb to manage
+    if len(kb_names) == 0:
+        st.warning("您没有可管理的知识库，请联系管理员。", icon='⚠️')
+        st.stop()
+
 
     if selected_kb:
         kb = selected_kb

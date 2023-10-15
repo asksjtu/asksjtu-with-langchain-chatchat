@@ -6,7 +6,7 @@ import pandas as pd
 import os
 import time
 
-from askadmin.manager import KBManager
+from askadmin.db.models import User, KnowledgeBase
 from webui_pages.utils import *
 from webui_pages.asksjtu_admin.components import Auth
 from configs import (CHUNK_SIZE, OVERLAP_SIZE, ZH_TITLE_ENHANCE)
@@ -50,7 +50,6 @@ def file_exists(kb: str, selected_rows: List) -> Tuple[str, str]:
 
 def knowledge_base_page(api: ApiRequest):
     auth = Auth(key='user-knowledge-base-page')
-    kb_manager = KBManager()
     if not auth.is_authenticated:
         st.stop()
 
@@ -61,8 +60,7 @@ def knowledge_base_page(api: ApiRequest):
         st.stop()
 
     # make sure managed_kbs is not None
-    managed_kbs: List = kb_manager.get(kb_pk__in=auth.user.get("kbs", [])) or []
-    managed_kb_names = set([kb.get("name", None) for kb in managed_kbs])
+    managed_kb_names = set([kb.name for kb in auth.user.kbs])
     system_kb_names = set(kb_list.keys())
     # only allowed kb can be managed
     kb_names = list(managed_kb_names & system_kb_names)
@@ -120,9 +118,9 @@ def knowledge_base_page(api: ApiRequest):
             elif msg := check_error_msg(ret):
                 st.toast(msg, icon="✖")
 
-        db_kb = kb_manager.get(name=kb)
+        db_kb = KnowledgeBase.get_or_none(name=kb)
         if db_kb:
-            slug = db_kb.get('slug')
+            slug = db_kb.slug
             st.info(f"通过链接访问知识库：\n[https://ask.sjtu.cn/?kb={slug}](/?kb={slug})")
         st.divider()
 

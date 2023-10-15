@@ -4,7 +4,7 @@ from typing import List, Dict
 from datetime import datetime
 import os
 from askadmin.utils import kb_name_to_hash
-from askadmin.manager import KBManager
+from askadmin.db.models import User, KnowledgeBase
 from configs.model_config import LLM_MODEL, TEMPERATURE, HISTORY_LEN
 from configs.asksjtu_config import DEFAULT_KNOWLEDGE_BASE_NAME
 from webui_pages.utils import *
@@ -12,7 +12,6 @@ from server.knowledge_base.utils import get_file_path as get_kb_file_path
 
 from .widgets import DownloadButtons, DownloadButtonProps
 
-manager = KBManager()
 chat_box = ChatBox(
     assistant_avatar=os.path.join("img", "chatchat_icon_blue_square_v2.png")
 )
@@ -76,13 +75,13 @@ def dialogue_page(api: ApiRequest):
             return DEFAULT_KNOWLEDGE_BASE_NAME
         knowledge_base_hash = params["kb"][0]
         # try to get kb from manager
-        kbs = manager.list() or []
-        knowledge_base = next(
-            filter(lambda kb: kb.get("slug", None) == knowledge_base_hash, kbs),
+        kbs: List[KnowledgeBase] = [kb for kb in KnowledgeBase.select()]
+        knowledge_base: Optional[KnowledgeBase] = next(
+            filter(lambda kb: kb.slug == knowledge_base_hash, kbs),
             None,  # default value
         )
         if knowledge_base is not None:
-            return knowledge_base.get("name")
+            return knowledge_base.name
         # try to get kb from API
         knowledge_base_list = api.list_knowledge_bases()
         knowledge_base = next(
@@ -97,7 +96,6 @@ def dialogue_page(api: ApiRequest):
         return knowledge_base
 
     selected_kb = get_knowledge_base()
-    print(selected_kb)
 
     # Display chat messages from history on app rerun
 

@@ -5,7 +5,7 @@ from datetime import datetime, timedelta
 from typing import Optional, Dict
 from tinydb.table import Document
 
-from askadmin.manager import UserManager, KBManager
+from askadmin.db.models import User
 from configs.asksjtu_config import JWT_SECRET
 
 
@@ -16,7 +16,6 @@ class Auth:
     def __init__(
         self, key: Optional[str] = "init", jwt_secret: Optional[str] = None
     ) -> None:
-        self.user_manager = UserManager()
         self.manager = stx.CookieManager(key=key)
         self.jwt_secret = jwt_secret if jwt_secret is not None else JWT_SECRET
 
@@ -29,7 +28,7 @@ class Auth:
         if user_id is None:
             # invalid jwt
             return None
-        return self.user_manager.get(pk=user_id)
+        return User.get_or_none(id=user_id)
 
     @property
     def is_authenticated(self) -> bool:
@@ -58,13 +57,12 @@ class Auth:
         """
         return user if the credentials are correct
         """
-        print(f"Attempt to login with {username} and {password}")
-        if not self.user_manager.check_password(username, password):
+        user: Optional[User] = User.get_or_none(username=username)
+        if not user or not user.check_password(password):
             self.mark_wrong_password()
             return None
-        user = self.user_manager.get(username=username)
         # login success
-        self.manager.set(self.COOKLE_NAME, self.sign_jwt(user_id=user.doc_id))
+        self.manager.set(self.COOKLE_NAME, self.sign_jwt(user_id=user.id))
         self.clear_wrong_password()
         return user
 

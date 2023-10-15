@@ -6,22 +6,25 @@ import pandas as pd
 import os
 import time
 
-from askadmin.manager import KBManager
+from askadmin.db.models import User, KnowledgeBase
 from webui_pages.utils import *
 from webui_pages.asksjtu_admin.components import Auth
-from configs import (CHUNK_SIZE, OVERLAP_SIZE, ZH_TITLE_ENHANCE)
+from configs import CHUNK_SIZE, OVERLAP_SIZE, ZH_TITLE_ENHANCE
+from configs.asksjtu_config import DEFAULT_WELCOME_MESSAGE
 from server.knowledge_base.utils import get_file_path, LOADER_DICT
 from server.knowledge_base.kb_service.base import get_kb_details, get_kb_file_details
 
 
-cell_renderer = JsCode("""function(params) {if(params.value==true){return '✓'}else{return '×'}}""")
+cell_renderer = JsCode(
+    """function(params) {if(params.value==true){return '✓'}else{return '×'}}"""
+)
 
 
 def config_aggrid(
-        df: pd.DataFrame,
-        columns: Dict[Tuple[str, str], Dict] = {},
-        selection_mode: Literal["single", "multiple", "disabled"] = "single",
-        use_checkbox: bool = False,
+    df: pd.DataFrame,
+    columns: Dict[Tuple[str, str], Dict] = {},
+    selection_mode: Literal["single", "multiple", "disabled"] = "single",
+    use_checkbox: bool = False,
 ) -> GridOptionsBuilder:
     gb = GridOptionsBuilder.from_dataframe(df)
     gb.configure_column("No", width=40)
@@ -36,10 +39,10 @@ def config_aggrid(
 
 
 def file_exists(kb: str, selected_rows: List) -> Tuple[str, str]:
-    '''
+    """
     check whether a doc file exists in local knowledge base folder.
     return the file's name and path if it exists.
-    '''
+    """
     if selected_rows:
         file_name = selected_rows[0]["file_name"]
         file_path = get_file_path(kb, file_name)
@@ -49,25 +52,28 @@ def file_exists(kb: str, selected_rows: List) -> Tuple[str, str]:
 
 
 def knowledge_base_page(api: ApiRequest):
-    auth = Auth(key='user-knowledge-base-page')
-    kb_manager = KBManager()
+    auth = Auth(key="user-knowledge-base-page")
     if not auth.is_authenticated:
         st.stop()
 
     try:
         kb_list = {x["kb_name"]: x for x in get_kb_details()}
     except Exception as e:
-        st.error("获取知识库信息错误，请检查是否已按照 `README.md` 中 `4 知识库初始化与迁移` 步骤完成初始化或迁移，或是否为数据库连接错误。")
+        st.error(
+            "获取知识库信息错误，请检查是否已按照 `README.md` 中 `4 知识库初始化与迁移` 步骤完成初始化或迁移，或是否为数据库连接错误。"
+        )
         st.stop()
 
     # make sure managed_kbs is not None
-    managed_kbs: List = kb_manager.get(kb_pk__in=auth.user.get("kbs", [])) or []
-    managed_kb_names = set([kb.get("name", None) for kb in managed_kbs])
+    managed_kb_names = set([kb.name for kb in auth.user.kbs])
     system_kb_names = set(kb_list.keys())
     # only allowed kb can be managed
     kb_names = list(managed_kb_names & system_kb_names)
 
-    if "selected_kb_name" in st.session_state and st.session_state["selected_kb_name"] in kb_names:
+    if (
+        "selected_kb_name" in st.session_state
+        and st.session_state["selected_kb_name"] in kb_names
+    ):
         selected_kb_index = kb_names.index(st.session_state["selected_kb_name"])
     else:
         selected_kb_index = 0
@@ -79,50 +85,66 @@ def knowledge_base_page(api: ApiRequest):
             return kb_name
 
     selected_kb = st.selectbox(
-        "请选择或新建知识库：",
-        kb_names,
-        format_func=format_selected_kb,
-        index=selected_kb_index
+        "请选择或新建知识库：", kb_names, format_func=format_selected_kb, index=selected_kb_index
     )
 
     # handle if the user has no kb to manage
     if len(kb_names) == 0:
-        st.warning("您没有可管理的知识库，请联系管理员。", icon='⚠️')
+        st.warning("您没有可管理的知识库，请联系管理员。", icon="⚠️")
         st.stop()
-
 
     if selected_kb:
         kb = selected_kb
 
         # 上传文件
-        files = st.file_uploader("上传知识文件：",
-                                 [i for ls in LOADER_DICT.values() for i in ls],
-                                 accept_multiple_files=True,
-                                 )
+        files = st.file_uploader(
+            "上传知识文件：",
+            [i for ls in LOADER_DICT.values() for i in ls],
+            accept_multiple_files=True,
+        )
 
         chunk_size = CHUNK_SIZE
         chunk_overlap = OVERLAP_SIZE
         zh_title_enhance = ZH_TITLE_ENHANCE
 
         if st.button(
-                "添加文件到知识库",
-                # use_container_width=True,
-                disabled=len(files) == 0,
+            "添加文件到知识库",
+            # use_container_width=True,
+            disabled=len(files) == 0,
         ):
-            ret = api.upload_kb_docs(files,
-                                     knowledge_base_name=kb,
-                                     override=True,
-                                     chunk_size=chunk_size,
-                                     chunk_overlap=chunk_overlap,
-                                     zh_title_enhance=zh_title_enhance)
+            ret = api.upload_kb_docs(
+                files,
+                knowledge_base_name=kb,
+                override=True,
+                chunk_size=chunk_size,
+                chunk_overlap=chunk_overlap,
+                zh_title_enhance=zh_title_enhance,
+            )
             if msg := check_success_msg(ret):
                 st.toast(msg, icon="✔")
             elif msg := check_error_msg(ret):
                 st.toast(msg, icon="✖")
 
-        db_kb = kb_manager.get(name=kb)
+        db_kb = KnowledgeBase.get_or_none(name=kb)
         if db_kb:
-            slug = db_kb.get('slug')
+            # welcome message
+            def update_welcome_message():
+                welcome_message = st.session_state.get("new_kb_slug", "")
+                if welcome_message == "" or welcome_message is None:
+                    welcome_message = DEFAULT_WELCOME_MESSAGE
+                db_kb.welcome_message = welcome_message
+                db_kb.save()
+            with st.form("kb_slug_form"):
+                st.text_input(
+                    "欢迎消息：",
+                    value=db_kb.welcome_message,
+                    placeholder=DEFAULT_WELCOME_MESSAGE,
+                    key="new_kb_slug",
+                )
+                st.form_submit_button("保存欢迎消息", on_click=update_welcome_message)
+
+            # slug
+            slug = db_kb.slug
             st.info(f"通过链接访问知识库：\n[https://ask.sjtu.cn/?kb={slug}](/?kb={slug})")
         st.divider()
 
@@ -135,9 +157,17 @@ def knowledge_base_page(api: ApiRequest):
             st.write(f"知识库 `{kb}` 中已有文件:")
             st.info("知识库中包含源文件与向量库，请从下表中选择文件后操作")
             doc_details.drop(columns=["kb_name"], inplace=True)
-            doc_details = doc_details[[
-                "No", "file_name", "document_loader", "text_splitter", "docs_count", "in_folder", "in_db",
-            ]]
+            doc_details = doc_details[
+                [
+                    "No",
+                    "file_name",
+                    "document_loader",
+                    "text_splitter",
+                    "docs_count",
+                    "in_folder",
+                    "in_db",
+                ]
+            ]
             # doc_details["in_folder"] = doc_details["in_folder"].replace(True, "✓").replace(False, "×")
             # doc_details["in_db"] = doc_details["in_db"].replace(True, "✓").replace(False, "×")
             gb = config_aggrid(
@@ -166,7 +196,7 @@ def knowledge_base_page(api: ApiRequest):
                     "#gridToolBar": {"display": "none"},
                 },
                 allow_unsafe_jscode=True,
-                enable_enterprise_modules=False
+                enable_enterprise_modules=False,
             )
 
             selected_rows = doc_grid.get("selected_rows", [])
@@ -179,43 +209,49 @@ def knowledge_base_page(api: ApiRequest):
                         "下载选中文档",
                         fp,
                         file_name=file_name,
-                        use_container_width=True, )
+                        use_container_width=True,
+                    )
             else:
                 cols[0].download_button(
                     "下载选中文档",
                     "",
                     disabled=True,
-                    use_container_width=True, )
+                    use_container_width=True,
+                )
 
             st.write()
             # 将文件分词并加载到向量库中
             if cols[1].button(
-                    "重新添加至向量库" if selected_rows and (pd.DataFrame(selected_rows)["in_db"]).any() else "添加至向量库",
-                    disabled=not file_exists(kb, selected_rows)[0],
-                    use_container_width=True,
+                "重新添加至向量库"
+                if selected_rows and (pd.DataFrame(selected_rows)["in_db"]).any()
+                else "添加至向量库",
+                disabled=not file_exists(kb, selected_rows)[0],
+                use_container_width=True,
             ):
                 file_names = [row["file_name"] for row in selected_rows]
-                api.update_kb_docs(kb,
-                                   file_names=file_names,
-                                   chunk_size=chunk_size,
-                                   chunk_overlap=chunk_overlap,
-                                   zh_title_enhance=zh_title_enhance)
+                api.update_kb_docs(
+                    kb,
+                    file_names=file_names,
+                    chunk_size=chunk_size,
+                    chunk_overlap=chunk_overlap,
+                    zh_title_enhance=zh_title_enhance,
+                )
                 st.experimental_rerun()
 
             # 将文件从向量库中删除，但不删除文件本身。
             if cols[2].button(
-                    "从向量库删除",
-                    disabled=not (selected_rows and selected_rows[0]["in_db"]),
-                    use_container_width=True,
+                "从向量库删除",
+                disabled=not (selected_rows and selected_rows[0]["in_db"]),
+                use_container_width=True,
             ):
                 file_names = [row["file_name"] for row in selected_rows]
                 api.delete_kb_docs(kb, file_names=file_names)
                 st.experimental_rerun()
 
             if cols[3].button(
-                    "从知识库中删除",
-                    type="primary",
-                    use_container_width=True,
+                "从知识库中删除",
+                type="primary",
+                use_container_width=True,
             ):
                 file_names = [row["file_name"] for row in selected_rows]
                 api.delete_kb_docs(kb, file_names=file_names, delete_content=True)

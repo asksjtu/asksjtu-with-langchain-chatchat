@@ -2,7 +2,7 @@ import os
 import streamlit as st
 from streamlit_option_menu import option_menu
 
-from askadmin.manager import UserManager, KBManager
+from askadmin.db.models import User, KnowledgeBase
 from webui_pages.utils import *
 from webui_pages import *
 from webui_pages.asksjtu_admin.components import Auth
@@ -41,7 +41,7 @@ if __name__ == "__main__":
             f"当前使用模型`{LLM_MODEL}`, 您可以开始提问了."
         )
 
-    if auth.user and auth.user.get("role", UserManager.ROLE_USER) == UserManager.ROLE_ADMIN:
+    if auth.user and auth.user.role == User.ROLE_ADMIN:
         # unlock all features
         pages = {
             "对话": {"icon": "chat", "func": dialogue_page},

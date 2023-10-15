@@ -57,13 +57,12 @@ class Auth:
         """
         return user if the credentials are correct
         """
-        print(f"Attempt to login with {username} and {password}")
-        user = User.get_or_none(username=username)
+        user: Optional[User] = User.get_or_none(username=username)
         if not user or not user.check_password(password):
             self.mark_wrong_password()
             return None
         # login success
-        self.manager.set(self.COOKLE_NAME, self.sign_jwt(user_id=user.doc_id))
+        self.manager.set(self.COOKLE_NAME, self.sign_jwt(user_id=user.id))
         self.clear_wrong_password()
         return user
 

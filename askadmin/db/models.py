@@ -50,8 +50,8 @@ class User(Model):
         chunks = self.password.split(".")
         if len(chunks) != 2:
             return False
-        salt, hashed = chunks
-        return self.hash_password(password, salt) == hashed
+        salt, _ = chunks
+        return self.hash_password(password, salt) == self.password
 
     class Meta:
         database = db

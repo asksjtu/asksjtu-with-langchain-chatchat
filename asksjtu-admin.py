@@ -41,7 +41,7 @@ if __name__ == "__main__":
             f"当前使用模型`{LLM_MODEL}`, 您可以开始提问了."
         )
 
-    if auth.user and auth.user.role == User.ROLE_USER:
+    if auth.user and auth.user.role == User.ROLE_ADMIN:
         # unlock all features
         pages = {
             "对话": {"icon": "chat", "func": dialogue_page},

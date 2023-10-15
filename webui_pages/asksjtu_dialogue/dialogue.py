@@ -6,7 +6,7 @@ import os
 from askadmin.utils import kb_name_to_hash
 from askadmin.db.models import User, KnowledgeBase
 from configs.model_config import LLM_MODEL, TEMPERATURE, HISTORY_LEN
-from configs.asksjtu_config import DEFAULT_KNOWLEDGE_BASE_NAME
+from configs.asksjtu_config import DEFAULT_KNOWLEDGE_BASE_NAME, DEFAULT_WELCOME_MESSAGE
 from webui_pages.utils import *
 from server.knowledge_base.utils import get_file_path as get_kb_file_path
 
@@ -100,11 +100,15 @@ def dialogue_page(api: ApiRequest):
     # Display chat messages from history on app rerun
 
     chat_box.output_messages()
-    if "isWelcomeSaid" not in st.session_state:
-        st.session_state.isWelcomeSaid = False
-    if not st.session_state.isWelcomeSaid:
-        st.session_state.isWelcomeSaid = True
-        chat_box.ai_say([Markdown("欢迎使用交大智讯，一个用于回答校园相关问题的大语言模型。")])
+    if "has_welcome_message" not in st.session_state:
+        st.session_state.has_welcome_message = False
+    if not st.session_state.has_welcome_message:
+        st.session_state.has_welcome_message = True
+        welcome_message = (
+            KnowledgeBase.get_or_none(name=selected_kb).welcome_message
+            or DEFAULT_WELCOME_MESSAGE
+        )
+        chat_box.ai_say([Markdown(welcome_message)])
 
     chat_input_placeholder = "请输入对话内容，换行请使用Shift+Enter "
 

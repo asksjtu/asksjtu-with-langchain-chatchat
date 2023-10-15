@@ -9,7 +9,9 @@ ANALYTICS_PATH = ""
 
 # 管理员页面认证设置
 JWT_SECRET = ""
-AUTH_PASSWORD = ""
 
 # admin 数据库文件存储位置
 ADMIN_DB = os.path.join(os.path.dirname(os.path.dirname(__file__)), "admin_db.json")
+
+# 默认的欢迎语句
+DEFAULT_WELCOME_MESSAGE = "欢迎使用交大智讯，一个用于回答校园相关问题的大语言模型。"

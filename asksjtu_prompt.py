@@ -7,8 +7,8 @@ from configs.asksjtu_config import (
 
 def get_study_year_info() -> str:
     time_now = datetime.now()
-    study_year = time_now.year if time_now.month >= 9 else time_now.year-1
-    study_year_info = f'{study_year}-{study_year+1}学年'
+    study_year = time_now.year if time_now.month >= 9 else time_now.year - 1
+    study_year_info = f"{study_year}-{study_year+1}学年"
     return study_year_info
 
 
@@ -17,7 +17,12 @@ def get_semester_info() -> str:
     for name, start_date, end_date in SEMESTER_INFO:
         if start_date <= today <= end_date:
             return name
-    return ''
+    return ""
+
+
+def get_today_str() -> str:
+    today = date.today()
+    return today.strftime(r"%Y年%m月-%d日")
 
 
 def get_prompt_template() -> str:
@@ -31,11 +36,11 @@ def get_prompt_template() -> str:
     study_year_info = get_study_year_info()
     semester_info = get_semester_info()
 
-    template = template.replace('<study_year_info>', study_year_info)
-    template = template.replace('<semester_info>', semester_info)
-    template = template.replace('<date>', str(date.today()))
+    template = template.replace("<study_year_info>", study_year_info)
+    template = template.replace("<semester_info>", semester_info)
+    template = template.replace("<date>", get_today_str())
     return template
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     print(get_prompt_template())

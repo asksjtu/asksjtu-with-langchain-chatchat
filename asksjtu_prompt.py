@@ -4,6 +4,13 @@ from configs.asksjtu_config import (
     SEMESTER_INFO,
 )
 
+PROMPT_VAR_DESC = r"""
+目前支持的变量有：
+- `<study_year_info>`: 学年信息，如 `2020-2021学年`
+- `<semester_info>`: 学期信息，如 `秋季学期`
+- `<date>`: 今天的日期，如 `2021年09月01日`
+"""
+
 
 def get_study_year_info() -> str:
     time_now = datetime.now()
@@ -22,7 +29,7 @@ def get_semester_info() -> str:
 
 def get_today_str() -> str:
     today = date.today()
-    return today.strftime(r"%Y年%m月-%d日")
+    return today.strftime(r"%Y年%m月%d日")
 
 
 def get_prompt_template() -> str:

@@ -13,6 +13,13 @@ from server.utils import list_embed_models
 import os
 import time
 
+from askadmin.db.models import KnowledgeBase
+from webui_pages.asksjtu_knowledge_base.components import (
+    edit_welcome_message,
+    edit_kb_prompt,
+    edit_slug,
+)
+
 
 # SENTENCE_SIZE = 100
 
@@ -163,6 +170,13 @@ def knowledge_base_page(api: ApiRequest):
                 st.toast(msg, icon="✔")
             elif msg := check_error_msg(ret):
                 st.toast(msg, icon="✖")
+
+        db_kb = KnowledgeBase.get_or_none(name=kb)
+        if db_kb:
+            edit_welcome_message(db_kb)
+            edit_kb_prompt(db_kb)
+            edit_slug(db_kb)
+        st.divider()
 
         st.divider()
 

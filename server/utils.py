@@ -15,6 +15,8 @@ import httpx
 from typing import Literal, Optional, Callable, Generator, Dict, Any, Awaitable, Union
 
 from askadmin.db.models import KnowledgeBase
+from asksjtu_prompt import format_prompt_template
+from configs.asksjtu_config import DEFAULT_PROMPT_TEMPLATE
 
 thread_pool = ThreadPoolExecutor(os.cpu_count())
 
@@ -389,12 +391,21 @@ def get_prompt_template(name: str, kb_name: Optional[str] = None) -> Optional[st
     尝试从数据库中获取自定义模板，如果不存在则从prompt_config中加载模板内容
     '''
     if kb_name is None:
-        return get_default_prompt_template(name)
-    # fetch kb
+        return format_prompt_template(
+            get_default_prompt_template(name)
+        )
+    # fetch prompt command from kb
     kb = KnowledgeBase.get_or_none(name=kb_name)
-    if kb is None:
-        return get_default_prompt_template(name)
-    return kb.prompt or get_default_prompt_template(name)
+    # if KB does not exist or the prompt is empty
+    if kb is None or not kb.prompt:
+        return format_prompt_template(
+            get_default_prompt_template(name)
+        )
+    # else
+    return format_prompt_template(
+        DEFAULT_PROMPT_TEMPLATE,
+        command=kb.prompt,
+    )
 
 
 def set_httpx_config(

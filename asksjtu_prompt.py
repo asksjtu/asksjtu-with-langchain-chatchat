@@ -1,6 +1,7 @@
 from datetime import datetime, date
 from configs.asksjtu_config import (
     PROMPT,
+    DEFAULT_COMMAND,
     SEMESTER_INFO,
 )
 
@@ -32,22 +33,22 @@ def get_today_str() -> str:
     return today.strftime(r"%Y年%m月%d日")
 
 
-def get_prompt_template() -> str:
+def format_prompt_template(template: str = PROMPT, command: str = DEFAULT_COMMAND) -> str:
     """
     生成 prompt 模板，目前支持的变量有：
     - study_year_info: 学年信息
     - semester_info: 学期信息
     - date: 今天的日期
     """
-    template = PROMPT
     study_year_info = get_study_year_info()
     semester_info = get_semester_info()
 
     template = template.replace("<study_year_info>", study_year_info)
     template = template.replace("<semester_info>", semester_info)
     template = template.replace("<date>", get_today_str())
+    template = template.replace("<command>", command)
     return template
 
 
 if __name__ == "__main__":
-    print(get_prompt_template())
+    print(format_prompt_template())

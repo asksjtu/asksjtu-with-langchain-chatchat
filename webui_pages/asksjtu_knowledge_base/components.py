@@ -1,7 +1,7 @@
 import streamlit as st
 from configs.asksjtu_config import (
     DEFAULT_WELCOME_MESSAGE,
-    PROMPT as DEFAULT_PROMPT,
+    DEFAULT_COMMAND,
 )
 from asksjtu_prompt import PROMPT_VAR_DESC
 from askadmin.db.models import KnowledgeBase
@@ -84,20 +84,20 @@ def edit_kb_prompt(db_kb: KnowledgeBase):
     def update_kb_prompt():
         prompt = st.session_state.get("new_kb_prompt", "")
         if prompt == "" or prompt is None:
-            prompt = DEFAULT_PROMPT
+            prompt = DEFAULT_COMMAND
         db_kb.prompt = prompt
         db_kb.save()
         st.info("提示语已保存")
 
     def reset_to_default():
-        db_kb.prompt = DEFAULT_PROMPT
+        db_kb.prompt = DEFAULT_COMMAND
         db_kb.save()
         st.info("提示语已恢复默认值")
 
     with st.form("kb_prompt_form"):
         st.text_area(
             "提示语：",
-            value=db_kb.prompt or DEFAULT_PROMPT,
+            value=db_kb.prompt or DEFAULT_COMMAND,
             placeholder="请输入提示语",
             key="new_kb_prompt",
         )

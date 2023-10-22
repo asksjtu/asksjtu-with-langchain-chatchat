@@ -89,10 +89,12 @@ async def knowledge_base_chat(query: str = Body(..., description="用户输入",
         ]
 
         if stream:
+            # dump docs_json first to avoid blocking, add empty "answer" for compatibility
+            yield json.dumps({"answer": "", "docs_json": source_documents_json}, ensure_ascii=False)
             async for token in callback.aiter():
                 # Use server-sent-events to stream the response
                 yield json.dumps({"answer": token}, ensure_ascii=False)
-            yield json.dumps({"docs": source_documents, "docs_json": source_documents_json}, ensure_ascii=False)
+            yield json.dumps({"docs": source_documents}, ensure_ascii=False)
         else:
             answer = ""
             async for token in callback.aiter():

@@ -113,35 +113,47 @@ def dialogue_page(api: ApiRequest):
             elif chunk := d.get("answer"):
                 text += chunk
                 chat_box.update_msg(text, element_index=0)
-        chat_box.update_msg(text, element_index=0, streaming=False)
-        # concat docs string
-        docs = []
-        for inum, doc in enumerate(d.get("docs_json", [])):
-            filename, kb_name, content = doc["filename"], doc["kb_name"], doc["content"]
-            text = f"""出处 [{inum + 1}] **{filename}** \n\n{content}\n\n"""
-            docs.append(text)
-        chat_box.update_msg(
-            "\n\n".join(docs), element_index=1, streaming=False, state="complete"
-        )
-
-        source_names = set()
-        sources = []
-        for inum, doc in enumerate(d.get("docs_json", [])):
-            filename, kb_name, content = doc["filename"], doc["kb_name"], doc["content"]
-            # remove duplicate
-            if filename in source_names:
-                continue
-            else:
-                source_names.add(filename)
-            # append to sources
-            filepath = get_kb_file_path(kb_name, filename)
-            if os.path.exists(filepath):
-                sources.append(
-                    DownloadButtonProps(
-                        name=filename, path=get_kb_file_path(kb_name, filename)
+            if "docs_json" in d:
+                # concat docs string
+                docs_json = d.get("docs_json", [])
+                docs = []
+                sources = []
+                source_names = set()
+                for inum, doc in enumerate(docs_json):
+                    # deal with docs content
+                    filename, kb_name, content = (
+                        doc["filename"],
+                        doc["kb_name"],
+                        doc["content"],
                     )
+                    source_text = (
+                        f"""出处 [{inum + 1}] **{filename}** \n\n{content}\n\n"""
+                    )
+                    docs.append(source_text)
+                    # deal with download buttons
+                    # skip duplicate files
+                    if filename not in source_names:
+                        source_names.add(filename)
+                        filepath = get_kb_file_path(kb_name, filename)
+                        if os.path.exists(filepath):
+                            sources.append(
+                                DownloadButtonProps(
+                                    name=filename,
+                                    path=get_kb_file_path(kb_name, filename),
+                                )
+                            )
+                # update reference box
+                chat_box.update_msg(
+                    "\n\n".join(docs),
+                    element_index=1,
+                    streaming=False,
+                    state="complete",
                 )
-        chat_box.update_msg(DownloadButtons(sources), element_index=2, streaming=False)
+                # update download buttons
+                chat_box.update_msg(
+                    DownloadButtons(sources), element_index=2, streaming=False
+                )
+        chat_box.update_msg(text, element_index=0, streaming=False)
 
     now = datetime.now()
     with st.sidebar:

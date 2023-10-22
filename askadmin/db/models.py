@@ -15,6 +15,7 @@ class KnowledgeBase(Model):
     name = pw.CharField(max_length=255, unique=True)
     slug = pw.CharField(max_length=255, unique=True)
     welcome_message = pw.TextField(default="")
+    prompt = pw.TextField(default="")
 
     class Meta:
         database = db

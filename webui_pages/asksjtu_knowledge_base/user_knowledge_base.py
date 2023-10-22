@@ -9,8 +9,12 @@ import time
 from askadmin.db.models import User, KnowledgeBase
 from webui_pages.utils import *
 from webui_pages.asksjtu_admin.components import Auth
+from webui_pages.asksjtu_knowledge_base.components import (
+    edit_welcome_message,
+    edit_kb_prompt,
+    display_slug,
+)
 from configs import CHUNK_SIZE, OVERLAP_SIZE, ZH_TITLE_ENHANCE
-from configs.asksjtu_config import DEFAULT_WELCOME_MESSAGE
 from server.knowledge_base.utils import get_file_path, LOADER_DICT
 from server.knowledge_base.kb_service.base import get_kb_details, get_kb_file_details
 
@@ -127,25 +131,9 @@ def knowledge_base_page(api: ApiRequest):
 
         db_kb = KnowledgeBase.get_or_none(name=kb)
         if db_kb:
-            # welcome message
-            def update_welcome_message():
-                welcome_message = st.session_state.get("new_kb_slug", "")
-                if welcome_message == "" or welcome_message is None:
-                    welcome_message = DEFAULT_WELCOME_MESSAGE
-                db_kb.welcome_message = welcome_message
-                db_kb.save()
-            with st.form("kb_slug_form"):
-                st.text_input(
-                    "欢迎消息：",
-                    value=db_kb.welcome_message,
-                    placeholder=DEFAULT_WELCOME_MESSAGE,
-                    key="new_kb_slug",
-                )
-                st.form_submit_button("保存欢迎消息", on_click=update_welcome_message)
-
-            # slug
-            slug = db_kb.slug
-            st.info(f"通过链接访问知识库：\n[https://ask.sjtu.cn/?kb={slug}](/?kb={slug})")
+            edit_welcome_message(db_kb)
+            edit_kb_prompt(db_kb)
+            display_slug(db_kb)
         st.divider()
 
         # 知识库详情

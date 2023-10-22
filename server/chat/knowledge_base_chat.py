@@ -56,7 +56,7 @@ async def knowledge_base_chat(query: str = Body(..., description="用户输入",
         docs = search_docs(query, knowledge_base_name, top_k, score_threshold)
         context = "\n".join([doc.page_content for doc in docs])
 
-        prompt_template = get_prompt_template(prompt_name)
+        prompt_template = get_prompt_template(prompt_name, knowledge_base_name)
         input_msg = History(role="user", content=prompt_template).to_msg_template(False)
         chat_prompt = ChatPromptTemplate.from_messages(
             [i.to_msg_template() for i in history] + [input_msg])

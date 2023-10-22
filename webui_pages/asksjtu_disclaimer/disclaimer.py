@@ -1,22 +1,18 @@
+from configs.asksjtu_config import DEFAULT_DISCLAIMER_TEXT
+from askadmin.db.models import KnowledgeBase
+from webui_pages.asksjtu_admin.utils import get_knowledge_base_name
 from webui_pages.utils import ApiRequest
 import streamlit as st
 
 
-DISCLAIMER_TEXT = """\
-交大智讯的语言生成模型主要依赖于公开文件和数据进行训练，内容来自学校文件、互联网资源等。虽然我们尽力确保这些文件的高可信度，但由于信息的海量性、变化性以及处理模型的复杂性，我们不能保证所有生成的内容的真实性、准确性或完整性。
+def disclaimer_page(api: ApiRequest):
 
-交大智讯可能会生成误导性的信息、包含错误的信息或缺乏关键信息。任何使用该语言模型生成的信息都应在合适的情况下，得到相关机构人员或专业人士的独立核实和指导。用户对依赖此类信息所产生的后果需自行负责。
+    kb_name = get_knowledge_base_name(api)
+    kb = KnowledgeBase.get_or_none(name=kb_name)
+    if kb and kb.policy:
+        disclaimer_text = kb.policy
+    else:
+        disclaimer_text= DEFAULT_DISCLAIMER_TEXT
 
-请注意，交大智讯并未被设计为并且无法用于生成或提供专业意见或建议，包括但不限于法律、医疗、税收、投资等方面的建议。用户如需获取相关领域的专业意见或建议，应寻求相关领域的专业人士的帮助。
-
-此外，交大智讯不具备知识产权检测功能，可能会生成与已存在的知识库相似的内容，但这并非其设计目标或预期用途。我们呼吁并鼓励所有用户尊重并遵守知识产权法规，并对因违反相关法规所产生的后果自行负责。
-
-任何使用交大智讯的行为，都应遵循相关法规以及适当的道德和道德规范。开发者及其关联组织对因使用交大智讯产生的任何直接或间接损害概不负责。
-
-使用交大智讯即代表您同意并接受以上免责声明中的所有条件和条款。
-"""
-
-
-def disclaimer_page(_api: ApiRequest):
     st.title("免责声明")
-    st.markdown(DISCLAIMER_TEXT)
+    st.markdown(disclaimer_text)

@@ -6,8 +6,10 @@
 
 import streamlit as st
 from streamlit_option_menu import option_menu
+from askadmin.db.models import KnowledgeBase
 from configs.asksjtu_config import ANALYTICS_PATH
 from webui_pages.utils import *
+from webui_pages.asksjtu_admin.utils import get_knowledge_base_name
 from webui_pages.asksjtu_stylehack import style_hack
 from webui_pages.asksjtu_dialogue import dialogue_page
 from webui_pages.asksjtu_disclaimer import disclaimer_page
@@ -42,11 +44,18 @@ if __name__ == "__main__":
         },
     }
 
+    kb_name = get_knowledge_base_name(api)
+    kb = KnowledgeBase.get_or_none(name=kb_name)
+    if kb and kb.display_name:
+        display_name = kb.display_name
+    else:
+        display_name = "交大智讯"
+
     with st.sidebar:
         st.image(os.path.join("img/asksjtu", "SJTU-logo.png"), use_column_width=True)
 
         st.markdown(
-            "<p style='text-align: center; font-size:x-large;'>交大智讯</p>",
+            f"<p style='text-align: center; font-size:x-large;'>{display_name}</p>",
             unsafe_allow_html=True,
         )
 

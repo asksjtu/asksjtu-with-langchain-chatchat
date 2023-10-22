@@ -10,9 +10,11 @@ from askadmin.db.models import User, KnowledgeBase
 from webui_pages.utils import *
 from webui_pages.asksjtu_admin.components import Auth
 from webui_pages.asksjtu_knowledge_base.components import (
+    edit_display_name,
     edit_welcome_message,
     edit_kb_prompt,
     display_slug,
+    edit_policy,
 )
 from configs import CHUNK_SIZE, OVERLAP_SIZE, ZH_TITLE_ENHANCE
 from server.knowledge_base.utils import get_file_path, LOADER_DICT
@@ -129,13 +131,6 @@ def knowledge_base_page(api: ApiRequest):
             elif msg := check_error_msg(ret):
                 st.toast(msg, icon="✖")
 
-        db_kb = KnowledgeBase.get_or_none(name=kb)
-        if db_kb:
-            edit_welcome_message(db_kb)
-            edit_kb_prompt(db_kb)
-            display_slug(db_kb)
-        st.divider()
-
         # 知识库详情
         # st.info("请选择文件，点击按钮进行操作。")
         doc_details = pd.DataFrame(get_kb_file_details(kb))
@@ -244,3 +239,14 @@ def knowledge_base_page(api: ApiRequest):
                 file_names = [row["file_name"] for row in selected_rows]
                 api.delete_kb_docs(kb, file_names=file_names, delete_content=True)
                 st.experimental_rerun()
+
+        st.divider()
+
+        db_kb = KnowledgeBase.get_or_none(name=kb)
+        if db_kb:
+            st.markdown("#### 编辑知识库属性")
+            edit_display_name(db_kb)
+            edit_welcome_message(db_kb)
+            edit_kb_prompt(db_kb)
+            display_slug(db_kb)
+            edit_policy(db_kb)

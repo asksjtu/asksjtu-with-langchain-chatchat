@@ -15,9 +15,11 @@ import time
 
 from askadmin.db.models import KnowledgeBase
 from webui_pages.asksjtu_knowledge_base.components import (
+    edit_display_name,
     edit_welcome_message,
     edit_kb_prompt,
     edit_slug,
+    edit_policy,
 )
 
 
@@ -173,9 +175,11 @@ def knowledge_base_page(api: ApiRequest):
 
         db_kb = KnowledgeBase.get_or_none(name=kb)
         if db_kb:
+            edit_display_name(db_kb)
             edit_welcome_message(db_kb)
             edit_kb_prompt(db_kb)
             edit_slug(db_kb)
+            edit_policy(db_kb)
         st.divider()
 
         st.divider()

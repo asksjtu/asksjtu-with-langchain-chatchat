@@ -2,15 +2,73 @@ import streamlit as st
 from configs.asksjtu_config import (
     DEFAULT_WELCOME_MESSAGE,
     DEFAULT_COMMAND,
+    DEFAULT_DISCLAIMER_TEXT,
 )
 from asksjtu_prompt import PROMPT_VAR_DESC
 from askadmin.db.models import KnowledgeBase
 from askadmin.utils import kb_name_to_hash
 
 
+def edit_display_name(db_kb: KnowledgeBase):
+    def update_display_name():
+        display_name = st.session_state.get("new_kb_display_name", "")
+        if display_name == "" or display_name is None:
+            display_name = "交大智讯"
+        db_kb.display_name = display_name
+        db_kb.save()
+        st.info("应用名称已保存")
+
+    with st.form("kb_display_name_form"):
+        st.text_input(
+            "应用名称：",
+            value=db_kb.display_name or "交大智讯",
+            placeholder="请输入新的显示名称",
+            key="new_kb_display_name",
+        )
+        st.form_submit_button("保存应用名称", on_click=update_display_name)
+
+
+def edit_policy(db_kb: KnowledgeBase):
+    def update_policy():
+        policy = st.session_state.get("new_kb_policy", "")
+        if policy == "" or policy is None:
+            policy = ""
+        db_kb.policy = policy
+        db_kb.save()
+        st.info("隐私政策已保存")
+
+    def reset_to_default():
+        db_kb.policy = DEFAULT_DISCLAIMER_TEXT
+        db_kb.save()
+        st.info("隐私政策已恢复默认值")
+
+    with st.form("kb_policy_form"):
+        st.text_area(
+            "隐私政策：",
+            value=db_kb.policy or DEFAULT_DISCLAIMER_TEXT,
+            placeholder="请输入新的隐私政策",
+            key="new_kb_policy",
+        )
+        st.markdown(
+            "请使用 Markdown 语法编辑隐私政策，例如：\n"
+            "```\n"
+            "## 隐私政策\n"
+            "### 信息收集\n"
+            "我们不会收集任何用户信息。\n"
+            "```\n"
+        )
+        cols = st.columns(4)
+        cols[0].form_submit_button(
+            "保存隐私政策", on_click=update_policy, use_container_width=True
+        )
+        cols[1].form_submit_button(
+            "恢复默认值", on_click=reset_to_default, use_container_width=True
+        )
+
+
 def edit_welcome_message(db_kb: KnowledgeBase):
     def update_welcome_message():
-        welcome_message = st.session_state.get("new_kb_slug", "")
+        welcome_message = st.session_state.get("new_kb_welcome_message", "")
         if welcome_message == "" or welcome_message is None:
             welcome_message = DEFAULT_WELCOME_MESSAGE
         db_kb.welcome_message = welcome_message
@@ -22,16 +80,20 @@ def edit_welcome_message(db_kb: KnowledgeBase):
         db_kb.save()
         st.info("欢迎消息已恢复默认值")
 
-    with st.form("kb_slug_form"):
+    with st.form("kb_welcome_message_form"):
         st.text_input(
             "欢迎消息：",
             value=db_kb.welcome_message,
             placeholder=DEFAULT_WELCOME_MESSAGE,
-            key="new_kb_slug",
+            key="new_kb_welcome_message",
         )
         cols = st.columns(4)
-        cols[0].form_submit_button("保存欢迎消息", on_click=update_welcome_message, use_container_width=True)
-        cols[1].form_submit_button("恢复默认值", on_click=reset_to_default, use_container_width=True)
+        cols[0].form_submit_button(
+            "保存欢迎消息", on_click=update_welcome_message, use_container_width=True
+        )
+        cols[1].form_submit_button(
+            "恢复默认值", on_click=reset_to_default, use_container_width=True
+        )
 
 
 def display_slug(db_kb: KnowledgeBase):
@@ -76,8 +138,12 @@ def edit_slug(db_kb: KnowledgeBase):
             key="new_kb_slug",
         )
         cols = st.columns(4)
-        cols[0].form_submit_button("保存 slug", on_click=update_slug, use_container_width=True)
-        cols[1].form_submit_button("恢复默认值", on_click=reset_to_default, use_container_width=True)
+        cols[0].form_submit_button(
+            "保存 slug", on_click=update_slug, use_container_width=True
+        )
+        cols[1].form_submit_button(
+            "恢复默认值", on_click=reset_to_default, use_container_width=True
+        )
 
 
 def edit_kb_prompt(db_kb: KnowledgeBase):
@@ -103,5 +169,9 @@ def edit_kb_prompt(db_kb: KnowledgeBase):
         )
         st.markdown(PROMPT_VAR_DESC)
         cols = st.columns(4)
-        cols[0].form_submit_button("保存提示语", on_click=update_kb_prompt, use_container_width=True)
-        cols[1].form_submit_button("恢复默认值", on_click=reset_to_default, use_container_width=True)
+        cols[0].form_submit_button(
+            "保存提示语", on_click=update_kb_prompt, use_container_width=True
+        )
+        cols[1].form_submit_button(
+            "恢复默认值", on_click=reset_to_default, use_container_width=True
+        )

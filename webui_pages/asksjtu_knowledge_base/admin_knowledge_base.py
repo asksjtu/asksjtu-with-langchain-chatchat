@@ -173,15 +173,6 @@ def knowledge_base_page(api: ApiRequest):
             elif msg := check_error_msg(ret):
                 st.toast(msg, icon="✖")
 
-        db_kb = KnowledgeBase.get_or_none(name=kb)
-        if db_kb:
-            edit_display_name(db_kb)
-            edit_welcome_message(db_kb)
-            edit_kb_prompt(db_kb)
-            edit_slug(db_kb)
-            edit_policy(db_kb)
-        st.divider()
-
         st.divider()
 
         # 知识库详情
@@ -279,8 +270,6 @@ def knowledge_base_page(api: ApiRequest):
                 api.delete_kb_docs(kb, file_names=file_names, delete_content=True)
                 st.experimental_rerun()
 
-        st.divider()
-
         cols = st.columns(3)
 
         if cols[0].button(
@@ -310,3 +299,13 @@ def knowledge_base_page(api: ApiRequest):
             st.toast(ret.get("msg", " "))
             time.sleep(1)
             st.experimental_rerun()
+
+        db_kb = KnowledgeBase.get_or_none(name=kb)
+        if db_kb:
+            st.divider()
+            st.markdown("#### 编辑知识库属性")
+            edit_display_name(db_kb)
+            edit_welcome_message(db_kb)
+            edit_kb_prompt(db_kb)
+            edit_slug(db_kb)
+            edit_policy(db_kb)

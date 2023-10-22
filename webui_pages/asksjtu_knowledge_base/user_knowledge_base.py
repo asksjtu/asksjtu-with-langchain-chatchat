@@ -240,10 +240,10 @@ def knowledge_base_page(api: ApiRequest):
                 api.delete_kb_docs(kb, file_names=file_names, delete_content=True)
                 st.experimental_rerun()
 
-        st.divider()
 
         db_kb = KnowledgeBase.get_or_none(name=kb)
         if db_kb:
+            st.divider()
             st.markdown("#### 编辑知识库属性")
             edit_display_name(db_kb)
             edit_welcome_message(db_kb)

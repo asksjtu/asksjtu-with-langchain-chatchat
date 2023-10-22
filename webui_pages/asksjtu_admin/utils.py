@@ -13,11 +13,7 @@ def get_knowledge_base_name(api: ApiRequest):
         return DEFAULT_KNOWLEDGE_BASE_NAME
     knowledge_base_hash = params["kb"][0]
     # try to get kb from manager
-    kbs: List[KnowledgeBase] = [kb for kb in KnowledgeBase.select()]
-    knowledge_base: Optional[KnowledgeBase] = next(
-        filter(lambda kb: kb.slug == knowledge_base_hash, kbs),
-        None,  # default value
-    )
+    knowledge_base = KnowledgeBase.get_or_none(slug=knowledge_base_hash)
     if knowledge_base is not None:
         return knowledge_base.name
     # try to get kb from API

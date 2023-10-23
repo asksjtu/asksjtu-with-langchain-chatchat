@@ -23,9 +23,9 @@ if __name__ == "__main__":
         os.path.join("img/asksjtu", "SJTU-logo-square.png"),
         initial_sidebar_state="expanded",
         menu_items={
-            "Get Help": "https://github.com/chatchat-space/Langchain-Chatchat",
-            "Report a bug": "https://github.com/chatchat-space/Langchain-Chatchat/issues",
-            "About": f"""欢迎使用 Langchain-Chatchat WebUI {VERSION}！""",
+            "Get Help": "https://jihulab.com/asksjtu/langchain-chat-chat",
+            "Report a bug": "https://jihulab.com/asksjtu/langchain-chat-chat/-/issues",
+            "About": f"""欢迎使用 AskSJTU WebUI {VERSION}！""",
         },
     )
 

@@ -43,10 +43,11 @@ def format_prompt_template(template: str = PROMPT, command: str = DEFAULT_COMMAN
     study_year_info = get_study_year_info()
     semester_info = get_semester_info()
 
+    # NOTE: 先替换 command, 因为 command 中可能含有其他变量
+    template = template.replace("<command>", command)
     template = template.replace("<study_year_info>", study_year_info)
     template = template.replace("<semester_info>", semester_info)
     template = template.replace("<date>", get_today_str())
-    template = template.replace("<command>", command)
     return template
 
 

@@ -443,7 +443,7 @@ def webui_address() -> str:
     return f"http://{host}:{port}"
 
 
-def get_default_prompt_template(type: str, name: str) -> Optional[str]:
+def get_default_prompt_template(type: str, prompt_name: str) -> Optional[str]:
     '''
     从prompt_config中加载模板内容
     type: "llm_chat","agent_chat","knowledge_base_chat","search_engine_chat"的其中一种，如果有新功能，应该进行加入。
@@ -452,23 +452,23 @@ def get_default_prompt_template(type: str, name: str) -> Optional[str]:
     from configs import prompt_config
     import importlib
     importlib.reload(prompt_config)  # TODO: 检查configs/prompt_config.py文件有修改再重新加载
-    return prompt_config.PROMPT_TEMPLATES[type].get(name)
+    return prompt_config.PROMPT_TEMPLATES[type].get(prompt_name)
 
 
-def get_prompt_template(type: str, name: str, kb_name: Optional[str] = None) -> Optional[str]:
+def get_prompt_template(type: str, prompt_name: str, kb_name: Optional[str] = None) -> Optional[str]:
     '''
     尝试从数据库中获取自定义模板，如果不存在则从prompt_config中加载模板内容
     '''
     if kb_name is None:
         return format_prompt_template(
-            get_default_prompt_template(type, name)
+            get_default_prompt_template(type, prompt_name)
         )
     # fetch prompt command from kb
     kb = KnowledgeBase.get_or_none(name=kb_name)
     # if KB does not exist or the prompt is empty
     if kb is None or not kb.prompt:
         return format_prompt_template(
-            get_default_prompt_template(type, name)
+            get_default_prompt_template(type, prompt_name)
         )
     # else
     return format_prompt_template(

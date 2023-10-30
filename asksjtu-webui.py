@@ -22,12 +22,20 @@ api = ApiRequest(base_url=api_address())
 
 
 if __name__ == "__main__":
-    st.set_page_config(
-        page_title="交大智讯",
-        page_icon=os.path.join("img/asksjtu", "SJTU-logo-square.png"),
-        initial_sidebar_state="collapsed",
-        menu_items=None,
-    )
+    if "page_title" in st.session_state:
+        st.set_page_config(
+            page_title=st.session_state.page_title,
+            page_icon=os.path.join("img/asksjtu", "SJTU-logo-square.png"),
+            initial_sidebar_state="collapsed",
+            menu_items=None,
+        )
+    else:
+        st.set_page_config(
+            page_title="交大智讯",
+            page_icon=os.path.join("img/asksjtu", "SJTU-logo-square.png"),
+            initial_sidebar_state="collapsed",
+            menu_items=None,
+        )
 
     style_hack()
 
@@ -50,6 +58,9 @@ if __name__ == "__main__":
         display_name = kb.display_name
     else:
         display_name = "交大智讯"
+    if "page_title" not in st.session_state:
+        st.session_state["page_title"] = display_name
+        st.rerun()
 
     with st.sidebar:
         st.image(os.path.join("img/asksjtu", "SJTU-logo.png"), use_column_width=True)

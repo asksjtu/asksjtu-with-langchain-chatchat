@@ -51,3 +51,6 @@ DEFAULT_DISCLAIMER_TEXT = """\
 
 使用交大智讯即代表您同意并接受以上免责声明中的所有条件和条款。
 """
+
+# 在知识库中没有找到文档时的默认回答
+DEFAULT_REPLY_WHEN_NO_DOCS = "根据已知信息无法回答该问题。"

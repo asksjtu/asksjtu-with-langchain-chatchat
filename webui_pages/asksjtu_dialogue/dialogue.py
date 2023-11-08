@@ -6,7 +6,7 @@ import os
 from askadmin.utils import kb_name_to_hash
 from askadmin.db.models import User, KnowledgeBase
 from configs.model_config import LLM_MODEL, TEMPERATURE, HISTORY_LEN
-from configs.asksjtu_config import DEFAULT_WELCOME_MESSAGE
+from configs.asksjtu_config import DEFAULT_WELCOME_MESSAGE, DEFAULT_REPLY_WHEN_NO_DOCS
 from webui_pages.utils import *
 from webui_pages.asksjtu_admin.utils import get_knowledge_base_name
 from server.knowledge_base.utils import get_file_path as get_kb_file_path
@@ -119,6 +119,17 @@ def dialogue_page(api: ApiRequest):
                 docs = []
                 sources = []
                 source_names = set()
+
+                if len(docs_json) == 0 and DEFAULT_REPLY_WHEN_NO_DOCS:
+                    # no related documentation found and default reply set
+                    text = DEFAULT_REPLY_WHEN_NO_DOCS
+                    # the text will be updated outside the for-loop
+                    # update matched docs block
+                    chat_box.update_msg(
+                        "（未找到相关文档）", streaming=False, element_index=1, state="complete"
+                    )
+                    break
+
                 for inum, doc in enumerate(docs_json):
                     # deal with docs content
                     filename, kb_name, content = (

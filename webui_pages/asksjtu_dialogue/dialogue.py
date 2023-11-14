@@ -175,7 +175,7 @@ def dialogue_page(api: ApiRequest):
             use_container_width=True,
         ):
             chat_box.reset_history()
-            st.experimental_rerun()
+            st.rerun()
 
     export_btn.download_button(
         "导出记录",

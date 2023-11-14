@@ -12,6 +12,7 @@ from server.chat.utils import History
 from server.knowledge_base.kb_service.base import KBServiceFactory
 from server.knowledge_base.utils import get_doc_path
 import json
+import os
 from pathlib import Path
 from urllib.parse import urlencode
 from server.knowledge_base.kb_doc_api import search_docs

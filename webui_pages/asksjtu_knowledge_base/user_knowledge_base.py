@@ -219,7 +219,7 @@ def knowledge_base_page(api: ApiRequest):
                     chunk_overlap=chunk_overlap,
                     zh_title_enhance=zh_title_enhance,
                 )
-                st.experimental_rerun()
+                st.rerun()
 
             # 将文件从向量库中删除，但不删除文件本身。
             if cols[2].button(
@@ -229,7 +229,7 @@ def knowledge_base_page(api: ApiRequest):
             ):
                 file_names = [row["file_name"] for row in selected_rows]
                 api.delete_kb_docs(kb, file_names=file_names)
-                st.experimental_rerun()
+                st.rerun()
 
             if cols[3].button(
                 "从知识库中删除",
@@ -238,7 +238,7 @@ def knowledge_base_page(api: ApiRequest):
             ):
                 file_names = [row["file_name"] for row in selected_rows]
                 api.delete_kb_docs(kb, file_names=file_names, delete_content=True)
-                st.experimental_rerun()
+                st.rerun()
 
 
         db_kb = KnowledgeBase.get_or_none(name=kb)

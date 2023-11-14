@@ -5,7 +5,7 @@ from datetime import datetime
 import os
 from askadmin.utils import kb_name_to_hash
 from askadmin.db.models import User, KnowledgeBase
-from configs.model_config import LLM_MODEL, TEMPERATURE, HISTORY_LEN
+from configs.model_config import LLM_MODELS, TEMPERATURE, HISTORY_LEN
 from configs.asksjtu_config import DEFAULT_WELCOME_MESSAGE, DEFAULT_REPLY_WHEN_NO_DOCS
 from webui_pages.utils import *
 from webui_pages.asksjtu_admin.utils import get_knowledge_base_name
@@ -57,8 +57,8 @@ def dialogue_page(api: ApiRequest):
         # dialogue_mode 强制设定为 知识库问答
         dialogue_mode = "知识库问答"
         # llm_model 强制选择为 默认模型
-        llm_model = LLM_MODEL
-        st.session_state["cur_llm_model"] = LLM_MODEL
+        llm_model = LLM_MODELS[0]
+        st.session_state["cur_llm_model"] = LLM_MODELS[0]
         # temperature 和 history_len 强制设置为默认值
         temperature = TEMPERATURE
         history_len = HISTORY_LEN
@@ -175,7 +175,7 @@ def dialogue_page(api: ApiRequest):
             use_container_width=True,
         ):
             chat_box.reset_history()
-            st.experimental_rerun()
+            st.rerun()
 
     export_btn.download_button(
         "导出记录",

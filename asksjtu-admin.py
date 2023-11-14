@@ -1,10 +1,11 @@
 import os
 import streamlit as st
 from streamlit_option_menu import option_menu
+from streamlit_chatbox import *
 
 from askadmin.db.models import User, KnowledgeBase
 from webui_pages.utils import *
-from webui_pages import *
+from webui_pages.dialogue.dialogue import dialogue_page
 from webui_pages.asksjtu_admin.components import Auth
 from webui_pages.asksjtu_stylehack import style_hack
 from webui_pages.asksjtu_analytics import analytics_page
@@ -15,6 +16,13 @@ from server.utils import api_address
 
 
 api = ApiRequest(base_url=api_address())
+
+chat_box = ChatBox(
+    assistant_avatar=os.path.join(
+        "img",
+        "chatchat_icon_blue_square_v2.png"
+    )
+)
 
 
 if __name__ == "__main__":
@@ -36,9 +44,10 @@ if __name__ == "__main__":
     style_hack()
 
     if not chat_box.chat_inited:
+        default_model = api.get_default_llm_model()[0]
         st.toast(
             f"欢迎使用 [`AskSJTU`](https://jihulab.com/asksjtu/langchain-chat-chat) ! \n\n"
-            f"当前使用模型`{LLM_MODEL}`, 您可以开始提问了."
+            f"当前使用模型`{default_model}`, 您可以开始提问了."
         )
 
     if auth.user and auth.user.role == User.ROLE_ADMIN:

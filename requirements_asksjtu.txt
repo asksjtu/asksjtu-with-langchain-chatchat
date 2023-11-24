@@ -4,3 +4,5 @@ PyJWT
 tinydb
 click
 rich
+peewee
+uvicorn

@@ -20,7 +20,6 @@ import json
 import asyncio
 
 from askadmin.db.models import KnowledgeBase
-from askserver.models import KnowledgeBaseChatResponse
 from configs import (
     LLM_MODELS,
     TEMPERATURE,

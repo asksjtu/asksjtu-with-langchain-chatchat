@@ -41,12 +41,14 @@ router = APIRouter()
 
 class KnowledgeBaseChatDocs(BaseModel):
     """ChatDocs model"""
+
     filename: str
     content: str
 
 
 class KnowledgeBaseChatResponse(BaseModel):
     """ChatStreamResponse model"""
+
     answer: str
     docs: str
     docs_json: List[KnowledgeBaseChatDocs]
@@ -70,31 +72,28 @@ def download_knowledge_base_file(
 ):
     kb: Optional[KnowledgeBase] = KnowledgeBase.get_or_none(slug=knowledge_base_slug)
     if kb is None:
-        return Response(
-            status_code=404, content=f"未找到知识库 {knowledge_base_slug}", charset="utf-8"
-        )
+        return Response(status_code=404, content=f"未找到知识库 {knowledge_base_slug}")
 
     kb_doc_root = Path(get_doc_path(kb.name))
     file_path = kb_doc_root / filename
     if not file_path.exists():
-        return Response(status_code=404, content=f"未找到文件 {filename}", charset="utf-8")
+        return Response(status_code=404, content=f"未找到文件 {filename}")
     return FileResponse(file_path, filename=file_path.name)
 
 
-@router.post("/chat", responses={
-    200: {
-        "model": KnowledgeBaseChatResponse,
-        "description": "对话结果。若不启用流式输出，则一次性返回上述内容；若启用流式输出，第一次会返回 answers, docs 和 docs_json，后续只会返回 answers。",
-    },
-    404: {
-        "content": {
-            "application/json": {
-                "example": "{\"error\": \"未找到知识库 samples\"}"
-            }
+@router.post(
+    "/chat",
+    responses={
+        200: {
+            "model": KnowledgeBaseChatResponse,
+            "description": "对话结果。若不启用流式输出，则一次性返回上述内容；若启用流式输出，第一次会返回 answers, docs 和 docs_json 三个字段，后续的流式返回中只会返回 answers 字段。",
         },
-        "description": "错误信息",
-    }
-})
+        404: {
+            "content": {"application/json": {"example": '{"error": "未找到知识库 samples"}'}},
+            "description": "错误信息",
+        },
+    },
+)
 async def knowledge_base_chat(
     query: str = Body(..., description="用户输入", examples=["你好"]),
     knowledge_base_slug: str = Body(..., description="知识库ID", examples=["samples"]),

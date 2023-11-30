@@ -24,6 +24,8 @@ def create():
             models.User,
             models.KnowledgeBase,
             UserKnowledgeBase,
+            models.QA,
+            models.QACollection,
         ]
     )
 

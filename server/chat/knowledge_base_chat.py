@@ -19,37 +19,54 @@ from server.knowledge_base.kb_doc_api import search_docs
 
 
 async def knowledge_base_chat(query: str = Body(..., description="用户输入", examples=["你好"]),
-                            knowledge_base_name: str = Body(..., description="知识库名称", examples=["samples"]),
-                            top_k: int = Body(VECTOR_SEARCH_TOP_K, description="匹配向量数"),
-                            score_threshold: float = Body(SCORE_THRESHOLD, description="知识库匹配相关度阈值，取值范围在0-1之间，SCORE越小，相关度越高，取到1相当于不筛选，建议设置在0.5左右", ge=0, le=2),
-                            history: List[History] = Body([],
-                                                      description="历史对话",
-                                                      examples=[[
-                                                          {"role": "user",
-                                                           "content": "我们来玩成语接龙，我先来，生龙活虎"},
-                                                          {"role": "assistant",
-                                                           "content": "虎头虎脑"}]]
-                                                      ),
-                            stream: bool = Body(False, description="流式输出"),
-                            model_name: str = Body(LLM_MODELS[0], description="LLM 模型名称。"),
-                            temperature: float = Body(TEMPERATURE, description="LLM 采样温度", ge=0.0, le=1.0),
-                            max_tokens: Optional[int] = Body(None, description="限制LLM生成Token数量，默认None代表模型最大值"),
-                            prompt_name: str = Body("default", description="使用的prompt模板名称(在configs/prompt_config.py中配置)"),
-                            request: Request = None,
-                        ):
+                              knowledge_base_name: str = Body(..., description="知识库名称", examples=["samples"]),
+                              top_k: int = Body(VECTOR_SEARCH_TOP_K, description="匹配向量数"),
+                              score_threshold: float = Body(
+                                  SCORE_THRESHOLD,
+                                  description="知识库匹配相关度阈值，取值范围在0-1之间，SCORE越小，相关度越高，取到1相当于不筛选，建议设置在0.5左右",
+                                  ge=0,
+                                  le=2
+                              ),
+                              history: List[History] = Body(
+                                  [],
+                                  description="历史对话",
+                                  examples=[[
+                                      {"role": "user",
+                                       "content": "我们来玩成语接龙，我先来，生龙活虎"},
+                                      {"role": "assistant",
+                                       "content": "虎头虎脑"}]]
+                              ),
+                              stream: bool = Body(False, description="流式输出"),
+                              model_name: str = Body(LLM_MODELS[0], description="LLM 模型名称。"),
+                              temperature: float = Body(TEMPERATURE, description="LLM 采样温度", ge=0.0, le=1.0),
+                              max_tokens: Optional[int] = Body(
+                                  None,
+                                  description="限制LLM生成Token数量，默认None代表模型最大值"
+                              ),
+                              prompt_name: str = Body(
+                                  "default",
+                                  description="使用的prompt模板名称(在configs/prompt_config.py中配置)"
+                              ),
+                              request: Request = None,
+                              ):
     kb = KBServiceFactory.get_service_by_name(knowledge_base_name)
     if kb is None:
         return BaseResponse(code=404, msg=f"未找到知识库 {knowledge_base_name}")
 
     history = [History.from_data(h) for h in history]
 
-    async def knowledge_base_chat_iterator(query: str,
-                                           top_k: int,
-                                           history: Optional[List[History]],
-                                           model_name: str = LLM_MODELS[0],
-                                           prompt_name: str = prompt_name,
-                                           ) -> AsyncIterable[str]:
+    async def knowledge_base_chat_iterator(
+            query: str,
+            top_k: int,
+            history: Optional[List[History]],
+            model_name: str = LLM_MODELS[0],
+            prompt_name: str = prompt_name,
+    ) -> AsyncIterable[str]:
+        nonlocal max_tokens
         callback = AsyncIteratorCallbackHandler()
+        if isinstance(max_tokens, int) and max_tokens <= 0:
+            max_tokens = None
+
         model = get_ChatOpenAI(
             model_name=model_name,
             temperature=temperature,
@@ -73,10 +90,9 @@ async def knowledge_base_chat(query: str = Body(..., description="用户输入",
         )
 
         source_documents = []
-        doc_path = get_doc_path(knowledge_base_name)
         for inum, doc in enumerate(docs):
-            filename = Path(doc.metadata["source"]).resolve().relative_to(doc_path)
-            parameters = urlencode({"knowledge_base_name": knowledge_base_name, "file_name":filename})
+            filename = doc.metadata.get("source")
+            parameters = urlencode({"knowledge_base_name": knowledge_base_name, "file_name": filename})
             base_url = request.base_url
             url = f"{base_url}knowledge_base/download_doc?" + parameters
             text = f"""出处 [{inum + 1}] [{filename}]({url}) \n\n{doc.page_content}\n\n"""

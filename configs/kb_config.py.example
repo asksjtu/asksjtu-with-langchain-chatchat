@@ -9,6 +9,9 @@ DEFAULT_VS_TYPE = "faiss"
 # 缓存向量库数量（针对FAISS）
 CACHED_VS_NUM = 1
 
+# 缓存临时向量库数量（针对FAISS），用于文件对话
+CACHED_MEMO_VS_NUM = 10
+
 # 知识库中单段文本长度(不适用MarkdownHeaderTextSplitter)
 CHUNK_SIZE = 250
 
@@ -97,13 +100,13 @@ kbs_config = {
         "index_name": "test_index",
         "user": "",
         "password": ""
-   }
+    }
 }
 
 # TextSplitter配置项，如果你不明白其中的含义，就不要修改。
 text_splitter_dict = {
     "ChineseRecursiveTextSplitter": {
-        "source": "huggingface",  ## 选择tiktoken则使用openai的方法
+        "source": "huggingface",   # 选择tiktoken则使用openai的方法
         "tokenizer_name_or_path": "",
     },
     "SpacyTextSplitter": {

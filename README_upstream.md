@@ -56,7 +56,7 @@ docker run -d --gpus all -p 80:8501 registry.cn-beijing.aliyuncs.com/chatchat/ch
 
 ## 解决的痛点
 
-该项目是一个可以实现 __完全本地化__推理的知识库增强方案, 重点解决数数据安全保护，私域化部署的企业痛点。
+该项目是一个可以实现 __完全本地化__推理的知识库增强方案, 重点解决数据安全保护，私域化部署的企业痛点。
 本开源方案采用```Apache License```，可以免费商用，无需付费。
 
 我们支持市面上主流的本地大预言模型和Embedding模型，支持开源的本地向量数据库。
@@ -148,7 +148,7 @@ $ python startup.py -a
 [![Telegram](https://img.shields.io/badge/Telegram-2CA5E0?style=for-the-badge&logo=telegram&logoColor=white "langchain-chatglm")](https://t.me/+RjliQ3jnJ1YyN2E9)
 
 ### 项目交流群
-<img src="img/qr_code_72.jpg" alt="二维码" width="300" />
+<img src="img/qr_code_76.jpg" alt="二维码" width="300" />
 
 🎉 Langchain-Chatchat 项目微信交流群，如果你也对本项目感兴趣，欢迎加入群聊参与讨论交流。
 

@@ -5,14 +5,15 @@ from server.utils import get_httpx_client
 from fastchat import conversation as conv
 import json
 from typing import List, Dict
+from configs import logger, log_verbose
 
 
 class AzureWorker(ApiModelWorker):
     def __init__(
             self,
             *,
-            controller_addr: str,
-            worker_addr: str,
+            controller_addr: str = None,
+            worker_addr: str = None,
             model_names: List[str] = ["azure-api"],
             version: str = "gpt-35-turbo",
             **kwargs,
@@ -39,6 +40,11 @@ class AzureWorker(ApiModelWorker):
         }
 
         text = ""
+        if log_verbose:
+            logger.info(f'{self.__class__.__name__}:url: {url}')
+            logger.info(f'{self.__class__.__name__}:headers: {headers}')
+            logger.info(f'{self.__class__.__name__}:data: {data}')
+
         with get_httpx_client() as client:
             with client.stream("POST", url, headers=headers, json=data) as response:
                 for line in response.iter_lines():
@@ -54,6 +60,8 @@ class AzureWorker(ApiModelWorker):
                                     "error_code": 0,
                                     "text": text
                                 }
+                    else:
+                        self.logger.error(f"请求 Azure API 时发生错误：{resp}")
 
     def get_embeddings(self, params):
         # TODO: 支持embeddings

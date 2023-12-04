@@ -3,7 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 import argparse
 import uvicorn
 
-from askserver import knowledge_base
+from askserver import knowledge_base, qa_collection
 
 
 def create_app():
@@ -22,6 +22,7 @@ def create_app():
         allow_headers=["*"],
     )
     app.include_router(knowledge_base.router, prefix="/kb")
+    app.include_router(qa_collection.router, prefix="/qa")
     return app
 
 

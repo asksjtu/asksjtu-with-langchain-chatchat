@@ -159,13 +159,13 @@ async def knowledge_base_chat(
         source_documents = []
         for inum, doc in enumerate(docs):
             filename = Path(doc.metadata["source"]).name
-            text = f"""出处 [{inum + 1}] **{filename}** \n\n{doc.page_content}\n\n"""
+            text = f"""出处 [{inum + 1}] **{str(filename)}** \n\n{doc.page_content}\n\n"""
             source_documents.append(text)
 
         doc_path = get_doc_path(knowledge_base_name)
         source_documents_json = [
             dict(
-                filename=Path(doc.metadata["source"]).resolve().relative_to(doc_path),
+                filename=str(Path(doc.metadata["source"]).resolve().relative_to(doc_path)),
                 content=doc.page_content,
             )
             for doc in docs

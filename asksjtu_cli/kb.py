@@ -4,9 +4,9 @@ Knowledge Base Management
 
 import click
 import rich
-from typing import List, Optional
+from typing import List
 
-from askadmin.db.models import KnowledgeBase
+from askadmin.db.models import KnowledgeBase, QACollection
 from asksjtu_cli.base import asksjtu
 
 
@@ -37,7 +37,9 @@ def sync():
     kb_names = set(list_kbs_from_db())
     existing_kb = [kb for kb in KnowledgeBase.select()]
     existing_kb_names = set([kb.name for kb in existing_kb])
-    delta = kb_names - existing_kb_names
+    # filter all QACollection
+    existing_qa_collection_names = set([c.name for c in QACollection.select()])
+    delta = kb_names - existing_kb_names - existing_qa_collection_names
     # sync
     new_kbs = []
     for name in delta:

@@ -10,7 +10,9 @@ from rich.prompt import Prompt
 
 from typing import Optional, List
 from asksjtu_cli.base import asksjtu
-from askadmin.db.models import User, KnowledgeBase
+from asksjtu_cli.kb import display_kb
+from asksjtu_cli.qa import display_qa_collection
+from askadmin.db.models import User, KnowledgeBase, QACollection
 
 
 @asksjtu.group()
@@ -18,7 +20,29 @@ def user():
     pass
 
 
-def display_user(
+def display_user(user: User, with_password: bool = False) -> Table:
+    table = Table(title=user.name)
+    table.add_column("Field")
+    table.add_column("Value")
+    # add rows
+    table.add_row("Username", user.username)
+    table.add_row("Name", user.name)
+    table.add_row("Role", user.role)
+
+    # show managed kbs
+    if len(user.kbs) > 0:
+        table.add_row("Knowledge Base", "")
+        table.add_row("", display_kb(user.kbs))
+
+    # show managed qas
+    if len(user.qas) > 0:
+        table.add_row("Q&A Collection", "")
+        table.add_row("", display_qa_collection(user.qas))
+
+    return table
+
+
+def display_users(
     users: List[User], title: str = "User Info", with_password: bool = False
 ):
     table = Table(title=title)
@@ -26,13 +50,11 @@ def display_user(
     table.add_column("Username")
     table.add_column("Name")
     table.add_column("Role")
-    table.add_column("Knowledge Base")
     if with_password:
         table.add_column("Password (hashed)")
     # add rows
     for u in users:
-        kb_names = ",".join([kb.name for kb in u.kbs]) or "(None)"
-        row = [u.username, u.name, u.role, kb_names]
+        row = [u.username, u.name, u.role]
         if with_password:
             table.add_row(*row, u.password)
         else:
@@ -45,7 +67,18 @@ def display_user(
 def list(with_password: bool = False):
     users = [u for u in User.select()]
     # create table with rich
-    table = display_user(users, with_password=with_password)
+    table = display_users(users, with_password=with_password)
+    rich.print(table)
+
+
+@user.command()
+@click.argument("username", type=str)
+def show(username: str):
+    user = User.get_or_none(User.name == username)
+    if not user:
+        rich.print("[red]user not found[/red]")
+        return
+    table = display_user(user)
     rich.print(table)
 
 
@@ -95,7 +128,7 @@ def create(
         return
     else:
         rich.print("[green]Success[/green]")
-        display_user([user], title="Created User Info", with_password=True)
+        display_users([user], title="Created User Info", with_password=True)
         return
 
 
@@ -115,7 +148,7 @@ def reset_password(username: str):
     # reset and print out result
     user.password = User.hash_password(password)
     user.save()
-    display_user([user], title="Updated User Info", with_password=True)
+    display_users([user], title="Updated User Info", with_password=True)
 
 
 @user.command()
@@ -136,7 +169,7 @@ def update(username: str, name: Optional[str] = None, role: Optional[str] = None
         user.role = role
     user.save()
     # display updated info
-    display_user([user], title="Updated User Info")
+    display_user(user)
 
 
 @user.command()
@@ -169,3 +202,35 @@ def remove_kb(username: str, kb_name: str):
         rich.print("[red]knowledge base not found[/red]")
         return
     user.kbs.remove(kb)
+
+
+@user.command()
+@click.option("--username", type=str, required=True)
+@click.option("--qa-name", type=str, required=True)
+def add_qa(username: str, qa_name: str):
+    user = User.get_or_none(User.username == username)
+    if not user:
+        rich.print("[red]user not found[/red]")
+        return
+    qa = QACollection.get_or_none(QACollection.name == qa_name)
+    if not qa:
+        rich.print("[red]knowledge base not found[/red]")
+        return
+    user.qas.add(qa)
+
+
+@user.command()
+@click.option("--username", type=str, required=True)
+@click.option("--qa-name", type=str, required=True)
+def remove_qa(username: str, qa_name: str):
+    # get user
+    user = User.get_or_none(User.username == username)
+    if not user:
+        rich.print("[red]user not found[/red]")
+        return
+    # get qa
+    qa = KnowledgeBase.get_or_none(QACollection.name == qa_name)
+    if not qa:
+        rich.print("[red]knowledge base not found[/red]")
+        return
+    user.qas.remove(qa)

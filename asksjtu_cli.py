@@ -6,6 +6,7 @@ from asksjtu_cli.base import asksjtu
 from asksjtu_cli.user import *  # handles `user` subcommand
 from asksjtu_cli.kb import *  # handles `kb` subcommand
 from asksjtu_cli.db import *  # handles `db` subcommand
+from asksjtu_cli.qa import *  # handles `qa` subcommand
 
 
 @asksjtu.command()

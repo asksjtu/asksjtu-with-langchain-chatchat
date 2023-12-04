@@ -19,11 +19,15 @@ def create():
     from askadmin.db.base import db as database
 
     UserKnowledgeBase = models.User.kbs.get_through_model()
+    UserQACollection = models.User.qas.get_through_model()
     database.create_tables(
         [
             models.User,
             models.KnowledgeBase,
             UserKnowledgeBase,
+            models.QA,
+            models.QACollection,
+            UserQACollection,
         ]
     )
 

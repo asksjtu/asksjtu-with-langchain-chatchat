@@ -6,29 +6,8 @@ import peewee as pw
 import hashlib
 
 from askadmin.db.base import db
-from askadmin.utils import kb_name_to_hash
-
-__all__ = ["KnowledgeBase", "User"]
-
-
-class KnowledgeBase(Model):
-    name = pw.CharField(max_length=255, unique=True)
-    slug = pw.CharField(max_length=255, unique=True)
-    welcome_message = pw.TextField(default="")
-    prompt = pw.TextField(default="")
-    display_name = pw.CharField(max_length=255, default="交大智讯")
-    policy = pw.TextField(default="")
-
-    class Meta:
-        database = db
-
-
-@pre_init(sender=KnowledgeBase)
-def on_init(model_class, instance: KnowledgeBase):
-    if (instance.slug == "" or instance.slug is None) and (
-        instance.name != None and instance.name != ""
-    ):
-        instance.slug = kb_name_to_hash(instance.name)
+from askadmin.db.models.knowledge_base import KnowledgeBase
+from askadmin.db.models.qa_collection import QACollection
 
 
 class User(Model):
@@ -42,6 +21,7 @@ class User(Model):
         max_length=255, default=ROLE_USER, choices=(ROLE_USER, ROLE_ADMIN)
     )
     kbs = ManyToManyField(KnowledgeBase, backref="users")
+    qas = ManyToManyField(QACollection, backref="users")
 
     @staticmethod
     def hash_password(password: str, salt: Optional[str] = None):

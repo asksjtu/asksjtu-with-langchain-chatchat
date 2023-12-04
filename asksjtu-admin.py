@@ -6,6 +6,7 @@ from streamlit_chatbox import *
 from askadmin.db.models import User, KnowledgeBase
 from webui_pages.utils import *
 from webui_pages.dialogue.dialogue import dialogue_page
+from webui_pages.asksjtu_qa import qa_page
 from webui_pages.asksjtu_admin.components import Auth
 from webui_pages.asksjtu_stylehack import style_hack
 from webui_pages.asksjtu_analytics import analytics_page
@@ -55,12 +56,14 @@ if __name__ == "__main__":
         pages = {
             "对话": {"icon": "chat", "func": dialogue_page},
             "知识库管理": {"icon": "hdd-stack", "func": admin_knowledge_base_page},
+            "问答库管理": {"icon": "hdd-stack", "func": qa_page},
             "访问统计": {"icon": "graph-up", "func": analytics_page},
         }
     else:
         # normal user
         pages = {
             "知识库管理": {"icon": "hdd-stack", "func": user_knowledge_base_page},
+            "问答库管理": {"icon": "hdd-stack", "func": qa_page},
         }
 
     with st.sidebar:

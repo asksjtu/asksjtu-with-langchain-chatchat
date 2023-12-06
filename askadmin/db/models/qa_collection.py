@@ -32,7 +32,7 @@ class QA(Model):
     A single question and its answer, with keywords and alias
     """
     doc_id = pw.CharField(max_length=255, unique=True, null=True)
-    collection_id = pw.ForeignKeyField(QACollection, backref="questions")
+    collection = pw.ForeignKeyField(QACollection, backref="questions")
     source = pw.TextField()
     question = pw.TextField()
     answer = pw.TextField()

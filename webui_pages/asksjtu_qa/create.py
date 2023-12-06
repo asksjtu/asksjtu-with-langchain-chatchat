@@ -37,7 +37,7 @@ def section_qa_create(collection: QACollection) -> None:
             alias = None
         # save in db
         qa = QA.create(
-            collection_id=collection.id,
+            collection=collection,
             question=question,
             answer=answer,
             alias=alias,
@@ -117,7 +117,7 @@ def section_qa_collection_create(api: ApiRequest) -> None:
         # add metadata to QAs
         for qa in qa_list:
             qa.source = Path(source.name).name
-            qa.collection_id = collection.id
+            qa.collection = collection
             
         # TODO: optimize this
         # QA.bulk_create(qa_list)

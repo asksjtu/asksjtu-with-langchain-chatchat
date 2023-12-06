@@ -32,7 +32,7 @@ def qa_to_document(
     ]
     content = "\n".join(content_list)
     metadata = {
-        "source": qa.collection_id,
+        "source": qa.collection.id,
         "question": qa.question,
         "answer": qa.answer,
         "qa_id": qa.id,

@@ -11,11 +11,8 @@ from typing import List, Optional
 
 from askadmin.db.models import QA, QACollection
 from configs import (
-    LLM_MODELS,
-    TEMPERATURE,
     VECTOR_SEARCH_TOP_K,
     SCORE_THRESHOLD,
-    MAX_TOKENS,
 )
 from server.knowledge_base.kb_doc_api import search_docs
 
@@ -34,6 +31,7 @@ class QAQueryResponse(BaseModel):
     """ChatStreamResponse model"""
 
     query: str
+    answer: str = Field(..., description="问答库中与用户输入最匹配的问题-答案对的答案")
     qas: List[QAQueryResponseItem] = Field(..., description="问题-答案对列表")
 
 
@@ -45,7 +43,7 @@ class QAQueryResponse(BaseModel):
             "description": "查询结果",
         },
         404: {
-            "content": {"application/json": {"example": '{"error": "未找到知识库 samples"}'}},
+            "content": {"application/json": {"example": '{"error": "未找到问答库 samples"}'}},
             "description": "错误信息",
         },
     },

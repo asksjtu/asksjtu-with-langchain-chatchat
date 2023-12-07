@@ -51,14 +51,14 @@ def section_qa_create(collection: QACollection) -> None:
         st.success("问答已创建")
         st.rerun()
 
-    with st.form(KEY_QA_CREATE_FORM):
-        st.markdown("##### 新问答")
-        # widgets for question, answer and alias (or keywords)
-        st.text_input("问题：", placeholder="请输入问题", key=KEY_QA_NEW_QUESTION)
-        st.text_area("回答：", placeholder="请输入回答", key=KEY_QA_NEW_ANSWER)
-        st.text_input("关键字：", placeholder="请输入关键字", key=KEY_QA_NEW_ALIAS)
-        # submit button
-        st.form_submit_button("创建新问答", on_click=create_qa)
+    with st.expander("创建新问答"):
+        with st.form(KEY_QA_CREATE_FORM, border=False):
+            # widgets for question, answer and alias (or keywords)
+            st.text_input("问题：", placeholder="请输入问题", key=KEY_QA_NEW_QUESTION)
+            st.text_area("回答：", placeholder="请输入回答", key=KEY_QA_NEW_ANSWER)
+            st.text_input("关键字：", placeholder="请输入关键字", key=KEY_QA_NEW_ALIAS)
+            # submit button
+            st.form_submit_button("创建新问答", on_click=create_qa)
 
 
 def section_qa_collection_create(api: ApiRequest) -> None:

@@ -1,27 +1,213 @@
 import streamlit as st
-from typing import List
+import pandas as pd
+from typing import List, Dict
 
+from server.knowledge_base.kb_service.base import KBServiceFactory
+from server.qa_collection import utils as qa_utils
+from askadmin.db.base import db
 from askadmin.db.models import QA, QACollection
 
 
-def display_qa_item(qa: QA) -> None:
-    with st.expander(qa.question):
-        st.markdown(f"**回答：** {qa.answer}")
-        if qa.alias:
-            st.markdown(f"**关键字：** {qa.alias}")
+ZH_QUESTION = "问题"
+ZH_ANSWER = "答案"
+ZH_VECTORIZED = "是否入库"
+ZH_IF_DELETE = "删除？"
 
 
-def display_qa_list(qa: List[QA]) -> None:
-    for qa in qa:
-        display_qa_item(qa)
-
-
-def display_qa_collection(collection: QACollection):
+def diff_qa_dict_list(
+    origin: pd.DataFrame,
+    updated: pd.DataFrame,
+    key: str = "ID",
+    columns: List[str] = [ZH_VECTORIZED, ZH_IF_DELETE],
+) -> List[Dict]:
     """
-    Display all QA in a collection
+    Compare updated and origin dataframe of QAs and return the difference in updated df
     """
+    origin_id_map = {qa[key]: qa for qa in origin.to_dict(orient="records")}
+    updated_id_map = {qa[key]: qa for qa in updated.to_dict(orient="records")}
+    diff = []
+    for qa_id, qa in updated_id_map.items():
+        if qa_id not in origin_id_map:
+            diff.append(qa)
+        origin_qa = origin_id_map[qa_id]
+        for col in columns:
+            if qa[col] != origin_qa[col]:
+                diff.append(qa)
+                break
+    return diff
+
+
+def display_qas(collection: QACollection) -> None:
     qas = collection.questions
     if len(qas) != 0:
         st.markdown("### 问答列表")
-    display_qa_list(qas)
 
+    qas_dict = [
+        dict(
+            qa_id=qa.id,  # for updating
+            question=qa.question,
+            answer=qa.answer,
+            vectorized=qa.vectorized,
+            if_delete=False,  # set init value to false
+        )
+        for qa in qas
+    ]
+    df = pd.DataFrame.from_dict(qas_dict)
+    df.rename(
+        columns={
+            "qa_id": "ID",
+            "question": ZH_QUESTION,
+            "answer": ZH_ANSWER,
+            "vectorized": ZH_VECTORIZED,
+            "if_delete": ZH_IF_DELETE,
+        },
+        inplace=True,
+    )
+
+    updated = st.data_editor(
+        df,
+        hide_index=True,
+        use_container_width=True,
+        disabled=["ID", ZH_QUESTION, ZH_ANSWER],
+    )
+
+    update_button = st.button("更新问答库", type="primary")
+
+    if update_button:
+        """
+        Update QAs with the following policy:
+        1. Collect all QAs should be removed from vector stores, including:
+            - QAs with `vectorized` set to True and content of Question/Answer changed
+            - QAs with `if_delete` set to True and originally `vectorized` is True
+            - QAs with `vectorized` set to False and originally `vectorized` is True
+        2. Collect all QAs should be added to vector stores, including:
+            - QAs with content of Question/Answer changed
+            - QAs with content of Question/Answer unchanged but originally `vectorized` is set to False
+        3. Remove QAs in 1. from vector stores (with `vectorized` and `doc_id` field updated)
+        4. Update content of Question/Answer
+        5. Remove QAs with `if_delete` set to True
+        6. Add QAs in 2. to vector stores (with `vectorized` and `doc_id` field updated)
+        """
+        diff = diff_qa_dict_list(df, updated)
+        origin_qa_id_map = {qa_dict["qa_id"]: qa_dict for qa_dict in qas_dict}
+        diff_id_map = {d["ID"]: d for d in diff}
+        # 1. Collect all QAs should be removed from vector stores
+        to_remove = []
+        for updated_qa in diff:
+            origin_qa_dict = origin_qa_id_map[updated_qa["ID"]]
+            if origin_qa_dict["vectorized"] and (
+                origin_qa_dict["question"] != updated_qa[ZH_QUESTION]
+                or origin_qa_dict["answer"] != updated_qa[ZH_ANSWER]
+            ):
+                to_remove.append(updated_qa["ID"])
+                continue
+            if not origin_qa_dict["vectorized"]:
+                continue
+            if updated_qa[ZH_IF_DELETE]:
+                to_remove.append(updated_qa["ID"])
+                continue
+            if not updated_qa[ZH_VECTORIZED]:
+                to_remove.append(updated_qa["ID"])
+        # 2. Collect all QAs should be added to vector stores
+        to_add = []
+        for updated_qa in diff:
+            origin_qa_dict = origin_qa_id_map[updated_qa["ID"]]
+            if not updated_qa[ZH_VECTORIZED]:
+                continue
+            if not origin_qa_dict["vectorized"]:
+                to_add.append(updated_qa["ID"])
+                continue
+            if (
+                origin_qa_dict["question"] != updated_qa[ZH_QUESTION]
+                or origin_qa_dict["answer"] != updated_qa[ZH_ANSWER]
+            ):
+                to_add.append(updated_qa["ID"])
+                continue
+
+        # Run 3, 4, 5 to atomic actions to maintain consistancy
+        kb = KBServiceFactory.get_service_by_name(collection.name)
+        if not kb:
+            st.error("问答库不存在，请联系管理员")
+            st.stop()
+
+        # 3. Remove QAs in 1. from vector stores (with `vectorized` field updated)
+        to_removed_qas = QA.select(QA.doc_id).where(QA.id.in_(to_remove))
+        to_removed_doc_ids = [qa.doc_id for qa in to_removed_qas]
+        with db.atomic() as transaction:
+            qa_utils.delete_docs_by_id(kb, to_removed_doc_ids)
+            QA.update(vectorized=False, doc_id=None).where(
+                QA.id.in_(to_remove)
+            ).execute()
+
+        # 4. Update content of Question/Answer
+        to_update = []
+        for updated_qa in diff:
+            origin_qa_dict = origin_qa_id_map[updated_qa["ID"]]
+            if (
+                updated_qa[ZH_QUESTION] != origin_qa_dict["question"]
+                or updated_qa[ZH_ANSWER] != origin_qa_dict["answer"]
+            ):
+                to_update.append(updated_qa["ID"])
+        if len(to_update) != 0:
+            to_update_qas = QA.select().where(QA.id.in_(to_update))
+            for qa in to_update_qas:
+                qa.question = diff_id_map[qa.id][ZH_QUESTION]
+                qa.answer = diff_id_map[qa.id][ZH_ANSWER]
+                to_update_qas.append(qa)
+            QA.bulk_update(to_update_qas, fields=[QA.question, QA.answer])
+
+        # 5. Remove QAs with `if_delete` set to True
+        to_delete = []
+        for updated_qa in diff:
+            if updated_qa[ZH_IF_DELETE]:
+                to_delete.append(updated_qa["ID"])
+        if len(to_delete) != 0:
+            QA.delete().where(QA.id.in_(to_delete)).execute()
+
+        # 6. Add QAs in 2. to vector stores (with `vectorized` field updated)
+        if len(to_add) != 0:
+            to_add_qas = QA.select().where(QA.id.in_(to_add))
+            with db.atomic() as transaction:
+                qa_utils.vectorize_multiple(kb, to_add_qas)
+                transaction.commit()
+
+        st.rerun()
+
+
+def display_qa_collection(collection: QACollection) -> None:
+    display_qas(collection)
+
+    delete_collection = st.button("删除问答库")
+    if delete_collection:
+        kb = KBServiceFactory.get_service_by_name(collection.name)
+        if not kb:
+            st.error("问答库不存在，请联系管理员")
+            st.stop()
+
+        with db.atomic() as transaction:
+            if not (kb.clear_vs() and kb.drop_kb()):
+                st.error("问答库删除异常，请联系管理员")
+            # for database without on_delete constraint
+            # TODO: optimize this
+            QA.delete().where(QA.collection == collection).execute()
+            collection.delete_instance()
+            transaction.commit()
+
+        st.toast("问答库已删除", icon="🗑️")
+        st.rerun()
+
+
+def display_collection_slug(collection: QACollection, allow_edit: bool = False) -> None:
+    if allow_edit:
+
+        def update_slug():
+            collection.slug = new_slug
+            collection.save()
+            st.toast("问答库标识已更新", icon="🎈")
+            st.rerun()
+
+        with st.form("edit-collection-slug"):
+            new_slug = st.text_input("问答库标识", value=collection.slug)
+            submit = st.form_submit_button("更新", on_click=update_slug)
+    else:
+        st.info(f"问答库标识：{collection.slug}")

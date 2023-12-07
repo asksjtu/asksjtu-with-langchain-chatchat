@@ -13,7 +13,7 @@ from askadmin.db.models import QA
 
 
 def qa_to_document(
-    qa: QA, with_answer: bool = True, with_alias: bool = True
+    qa: QA, with_answer: bool = False, with_alias: bool = False
 ) -> Document:
     """
     Convert a QA to a Document object with the following metadata:
@@ -46,8 +46,8 @@ def qa_to_document(
 def vectorize_multiple(
     kb: KBService,
     qa_list: List[QA],
-    with_answer: bool = True,
-    with_alias: bool = True,
+    with_answer: bool = False,
+    with_alias: bool = False,
 ):
     """
     Embed multiple QAs and insert to vector store
@@ -75,7 +75,7 @@ def vectorize_multiple(
     qa_id_map = {str(qa.id): qa for qa in qa_list}
     for id_and_doc in id_and_docs:
         doc_id, metadata = id_and_doc["id"], id_and_doc["metadata"]
-        qa_id = metadata["qa_id"]
+        qa_id = str(metadata["qa_id"])
         if qa_id not in qa_id_map:
             logger.warning(f"QA id {qa_id} not found in qa_id_map")
             continue
@@ -91,3 +91,26 @@ def vectorize(kb: KBService, qa: QA):
     Embed a QA and insert to vector store
     """
     return vectorize_multiple(kb, [qa])
+
+
+def delete_docs_by_id(kb: KBService, doc_ids: List[str]):
+    """
+    Delete multiple docs from vector store by doc_id
+    """
+    if len(doc_ids) == 0:
+        return
+
+    from server.knowledge_base.kb_service.milvus_kb_service import MilvusKBService
+    from server.knowledge_base.kb_service.faiss_kb_service import FaissKBService
+    from server.knowledge_base.kb_service.pg_kb_service import PGKBService
+    if isinstance(kb, MilvusKBService):
+        if kb.milvus.col:
+            doc_ids = [int(pk) for pk in doc_ids]
+            kb.milvus.col.delete(expr=f'pk in {doc_ids}')
+    elif isinstance(kb, FaissKBService):
+        with kb.load_vector_store().acquire() as vs:
+            vs.delete(doc_ids)
+    elif isinstance(kb, PGKBService):
+        kb.pg_vector.delete(doc_ids)
+    else:
+        raise NotImplementedError()

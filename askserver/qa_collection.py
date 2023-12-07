@@ -84,6 +84,6 @@ async def qa_collection_query(
         )
         for qa in qas
     ]
-    sorted_items = sorted(items, key=lambda x: x.score, reverse=True)
+    sorted_items = sorted(items, key=lambda x: x.score)
 
     return QAQueryResponse(qas=sorted_items, query=query, answer=sorted_items[0].answer)

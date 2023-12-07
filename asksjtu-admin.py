@@ -56,14 +56,14 @@ if __name__ == "__main__":
         pages = {
             "对话": {"icon": "chat", "func": dialogue_page},
             "知识库管理": {"icon": "hdd-stack", "func": admin_knowledge_base_page},
-            "问答库管理": {"icon": "hdd-stack", "func": qa_page},
+            "问答库管理": {"icon": "journal-medical", "func": qa_page},
             "访问统计": {"icon": "graph-up", "func": analytics_page},
         }
     else:
         # normal user
         pages = {
             "知识库管理": {"icon": "hdd-stack", "func": user_knowledge_base_page},
-            "问答库管理": {"icon": "hdd-stack", "func": qa_page},
+            "问答库管理": {"icon": "journal-medical", "func": qa_page},
         }
 
     with st.sidebar:

@@ -1,4 +1,4 @@
-from typing import List, Tuple, Optional
+from typing import List, Optional
 from streamlit.runtime.uploaded_file_manager import UploadedFile
 import openpyxl
 import pandas as pd

@@ -15,6 +15,8 @@ KEY_QA_CREATE_FORM = "QA-CREATE-FORM"
 KEY_QA_NEW_QUESTION = "new_qa_question"
 KEY_QA_NEW_ANSWER = "new_qa_answer"
 KEY_QA_NEW_ALIAS = "new_qa_alias"
+KEY_QA_IMPORT_FROM_FILE = "new_import_from_file"
+KEY_QA_IMPORT_FROM_FILE_INPUT_FILE = "new_import_from_file_input_file"
 
 KEY_QA_COLLECTION_CREATE_FORM = "QA-COLLECTION-CREATE-FORM"
 KEY_QA_COLLECTION_NEW_NAME = "new_qa_collection_name"
@@ -25,7 +27,7 @@ QA_ANSWER_COL_NAME = "答案"
 QA_ALIAS_COL_NAME = "关键词"
 
 
-def section_qa_create(collection: QACollection) -> None:
+def section_qa_create(collection: QACollection, api: Optional[ApiRequest] = None) -> None:
     def create_qa():
         question = st.session_state.get(KEY_QA_NEW_QUESTION, "")
         answer = st.session_state.get(KEY_QA_NEW_ANSWER, "")
@@ -51,14 +53,80 @@ def section_qa_create(collection: QACollection) -> None:
         st.success("问答已创建")
         st.rerun()
 
-    with st.expander("创建新问答"):
-        with st.form(KEY_QA_CREATE_FORM, border=False):
-            # widgets for question, answer and alias (or keywords)
-            st.text_input("问题：", placeholder="请输入问题", key=KEY_QA_NEW_QUESTION)
-            st.text_area("回答：", placeholder="请输入回答", key=KEY_QA_NEW_ANSWER)
-            st.text_input("关键字：", placeholder="请输入关键字", key=KEY_QA_NEW_ALIAS)
-            # submit button
-            st.form_submit_button("创建新问答", on_click=create_qa)
+    def import_qa():
+        """
+        Parse QAs from imported file and create them
+        """
+        source = st.session_state.get(KEY_QA_IMPORT_FROM_FILE_INPUT_FILE, None)
+        if source is None:
+            st.error("请上传文件")
+            return
+
+        try:
+            qa_list = parse_qa_from_source(
+                source,
+                question_field=QA_QUESTION_COL_NAME,
+                answer_field=QA_ANSWER_COL_NAME,
+                alias_field=None,
+            )
+        except ValueError as e:
+            st.error(e)
+            return
+
+        # upload source file to KnowledgeBase of langchain-chatchat
+        if api is not None:
+            rsp = api.upload_kb_docs(
+                files=[source],
+                knowledge_base_name=collection.name,
+                # manually disable
+                to_vector_store=False,
+            )
+            if rsp["code"] != 200:
+                logger.error(rsp)
+                raise ValueError(rsp.get("msg", "导入问答库失败，请联系管理员排查"))
+
+        # add metadata to QAs
+        for qa in qa_list:
+            qa.source = Path(source.name).name
+            qa.collection = collection
+
+        # TODO: optimize this
+        # QA.bulk_create(qa_list)
+        for qa in qa_list:
+            qa.save()
+
+        kb = KBServiceFactory.get_service_by_name(collection.name)
+        if kb is None:
+            st.error("未找到 QACollection 对应的知识库")
+            return
+        qa_utils.vectorize_multiple(kb, qa_list)
+        
+        st.success(f"共导入 {len(qa_list)} 条记录")
+
+
+    with st.expander("创建/导入新问答"):
+        # form for creating single and form for importing multiple
+        tab_form, tab_import = st.tabs(["创建新问答", "导入新问答"])
+
+        with tab_form:
+            with st.form(KEY_QA_CREATE_FORM, border=False):
+                # widgets for question, answer and alias (or keywords)
+                st.text_input("问题：", placeholder="请输入问题", key=KEY_QA_NEW_QUESTION)
+                st.text_area("回答：", placeholder="请输入回答", key=KEY_QA_NEW_ANSWER)
+                st.text_input("关键字：", placeholder="请输入关键字", key=KEY_QA_NEW_ALIAS)
+                # submit button
+                st.form_submit_button("创建新问答", on_click=create_qa)
+
+        with tab_import:
+            with st.form(KEY_QA_IMPORT_FROM_FILE, border=False):
+                # allow upload file
+                st.file_uploader(
+                    "从文件中导入：",
+                    type=["csv", "xlsx", "xls"],
+                    key=KEY_QA_IMPORT_FROM_FILE_INPUT_FILE,
+                )
+                # submit button
+                st.form_submit_button("导入新问答", on_click=import_qa)
 
 
 def section_qa_collection_create(api: ApiRequest) -> None:
@@ -123,12 +191,13 @@ def section_qa_collection_create(api: ApiRequest) -> None:
         # QA.bulk_create(qa_list)
         for qa in qa_list:
             qa.save()
-        
+
         kb = KBServiceFactory.get_service_by_name(name)
         if kb is None:
             st.error("未找到 QACollection 对应的知识库")
             return
         qa_utils.vectorize_multiple(kb, qa_list)
+        
         st.success(f"问答库 {name} 已创建，共导入 {len(qa_list)} 条记录")
         return
 

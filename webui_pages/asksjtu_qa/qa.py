@@ -70,6 +70,6 @@ def qa_page(api: ApiRequest, is_lite: bool = False):
     st.divider()
 
     # show QA creation form
-    section_qa_create(collection=selected_collection)
+    section_qa_create(collection=selected_collection, api=api)
     # show QA list
     display_qa_collection(selected_collection)

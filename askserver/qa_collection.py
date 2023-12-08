@@ -64,6 +64,10 @@ async def qa_collection_query(
 
     # query vector store
     docs = search_docs(query, collection.name, top_k, score_threshold)
+
+    # early return if no docs are found
+    if len(docs) == 0:
+        return QAQueryResponse(qas=[], query=query, answer="")
     
     # create response item
     id_score_map = {int(doc.metadata["qa_id"]): doc.score for doc in docs}
@@ -80,5 +84,6 @@ async def qa_collection_query(
         )
         for qa in qas
     ]
+    sorted_items = sorted(items, key=lambda x: x.score)
 
-    return QAQueryResponse(qas=items, query=query)
+    return QAQueryResponse(qas=sorted_items, query=query, answer=sorted_items[0].answer)

@@ -1,5 +1,6 @@
 from typing import List, Tuple, Optional
 from streamlit.runtime.uploaded_file_manager import UploadedFile
+import openpyxl
 import pandas as pd
 
 from askadmin.db.models import QA
@@ -43,6 +44,7 @@ def parse_qa_from_source(
     # load file to dataframe
     df = upload_file_to_df(file)
     df = df.fillna("")
+
     # verify the existance of fields
     if question_field not in df.columns:
         raise ValueError(f"未找到问题字段 {question_field}")
@@ -50,6 +52,11 @@ def parse_qa_from_source(
         raise ValueError(f"未找到回答字段 {answer_field}")
     if alias_field is not None and alias_field not in df.columns:
         raise ValueError(f"未找到关键字字段 {alias_field}")
+
+    # remove `_x000D_` produced by carriage in xlsx source file
+    for str_col in (question_field, answer_field):
+        df[str_col] = df[str_col].astype(str).apply(openpyxl.utils.escape.unescape)
+
     # create QAs by iterating rows
     qa_list = [
         QA(

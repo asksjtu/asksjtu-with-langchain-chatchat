@@ -118,7 +118,7 @@ def section_qa_collection_create(api: ApiRequest) -> None:
         for qa in qa_list:
             qa.source = Path(source.name).name
             qa.collection = collection
-            
+
         # TODO: optimize this
         # QA.bulk_create(qa_list)
         for qa in qa_list:

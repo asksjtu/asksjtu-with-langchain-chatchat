@@ -1,13 +1,14 @@
 from fastapi.routing import APIRouter
 from fastapi import (
     Body,
+    Query,
     Request,
 )
 from fastapi.responses import (
     JSONResponse,
 )
 from pydantic import BaseModel, Field
-from typing import List, Optional
+from typing import List, Optional, Annotated
 
 from askadmin.db.models import QA, QACollection
 from configs import (
@@ -51,6 +52,8 @@ class QAQueryResponse(BaseModel):
 async def qa_collection_query(
     query: str = Body(..., description="用户输入", examples=["你好"]),
     slug: str = Body(..., description="问答库标识符", examples=["samples"]),
+    top_k: Annotated[Optional[int], Body(..., description="返回最匹配的前 k 个问题-答案对，最大为 10", ge=1, le=10)] = None,
+    threshold: Annotated[Optional[float], Body(..., description="返回匹配度大于等于 threadshold 的问题-答案对", gt=0, lt=1)] = None,
     request: Request = None,
 ):
     collection: Optional[QACollection] = QACollection.get_or_none(slug=slug)
@@ -59,11 +62,13 @@ async def qa_collection_query(
             status_code=404, content={"error": f"未找到问答库 {slug}"}
         )
 
-    top_k = VECTOR_SEARCH_TOP_K
-    score_threshold = SCORE_THRESHOLD
+    if top_k is None:
+        top_k = VECTOR_SEARCH_TOP_K
+    if threshold is None:
+        threshold = SCORE_THRESHOLD
 
     # query vector store
-    docs = search_docs(query, collection.name, top_k, score_threshold)
+    docs = search_docs(query, collection.name, top_k, threshold)
 
     # early return if no docs are found
     if len(docs) == 0:

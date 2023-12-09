@@ -11,7 +11,7 @@ from configs.asksjtu_config import ANALYTICS_PATH
 from webui_pages.utils import *
 from webui_pages.asksjtu_admin.utils import get_knowledge_base_name
 from webui_pages.asksjtu_stylehack import style_hack
-from webui_pages.asksjtu_dialogue import dialogue_page
+from webui_pages.asksjtu_dialogue import dialogue_route
 from webui_pages.asksjtu_disclaimer import disclaimer_page
 import os
 import random
@@ -44,7 +44,7 @@ if __name__ == "__main__":
     pages = {
         "对话": {
             "icon": "chat",
-            "func": dialogue_page,
+            "func": dialogue_route,
         },
         "免责声明": {
             "icon": "exclamation-octagon",

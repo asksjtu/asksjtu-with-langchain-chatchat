@@ -1,5 +1,5 @@
 from dataclasses import dataclass, asdict
-from typing import List, Any, Union
+from typing import List, Any, Union, Dict
 from streamlit_chatbox import OutputElement
 import streamlit as st
 import json

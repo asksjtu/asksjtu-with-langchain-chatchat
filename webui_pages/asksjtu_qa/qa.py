@@ -18,7 +18,11 @@ from webui_pages.asksjtu_qa.create import (
     section_qa_collection_create,
     section_qa_create,
 )
-from webui_pages.asksjtu_qa.display import display_qa_collection, display_collection_slug
+from webui_pages.asksjtu_qa.display import (
+    display_qa_collection,
+    display_collection_slug,
+    display_remove_collection_button,
+)
 from askadmin.db.models import QA, QACollection, KnowledgeBase, User
 
 
@@ -55,7 +59,10 @@ def qa_page(api: ApiRequest, is_lite: bool = False):
         )
 
     # show create collection form if text match
-    if auth.user.role == User.ROLE_ADMIN and collection_name == NEW_COLLECTION_HINT_TEXT:
+    if (
+        auth.user.role == User.ROLE_ADMIN
+        and collection_name == NEW_COLLECTION_HINT_TEXT
+    ):
         section_qa_collection_create(api)
         st.stop()
 
@@ -65,7 +72,9 @@ def qa_page(api: ApiRequest, is_lite: bool = False):
     )
 
     # display slug
-    display_collection_slug(selected_collection, allow_edit=auth.user.role == User.ROLE_ADMIN)
+    display_collection_slug(
+        selected_collection, allow_edit=auth.user.role == User.ROLE_ADMIN
+    )
 
     st.divider()
 
@@ -73,3 +82,7 @@ def qa_page(api: ApiRequest, is_lite: bool = False):
     section_qa_create(collection=selected_collection, api=api)
     # show QA list
     display_qa_collection(selected_collection)
+
+    if auth.user.role == User.ROLE_ADMIN:
+        st.divider()
+        display_remove_collection_button(selected_collection)

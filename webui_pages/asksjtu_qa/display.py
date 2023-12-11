@@ -145,7 +145,7 @@ def update_qas(
             transaction.commit()
 
 
-def display_qas(collection: QACollection) -> None:
+def display_qa_collection(collection: QACollection) -> None:
     qas = collection.questions
     if len(qas) != 0:
         st.markdown("### 问答列表")
@@ -183,7 +183,7 @@ def display_qas(collection: QACollection) -> None:
 
     with col_update:
         update_button = st.button("更新问答库", type="primary", use_container_width=True)
-    
+
     with col_preview:
         preview_button = st.button("预览", type="secondary", use_container_width=True)
 
@@ -205,11 +205,7 @@ def display_qas(collection: QACollection) -> None:
         st.rerun()
 
 
-def display_qa_collection(collection: QACollection) -> None:
-    display_qas(collection)
-
-    st.divider()
-
+def display_remove_collection_button(collection: QACollection) -> None:
     delete_collection = st.button("删除问答库")
     if delete_collection:
         kb = KBServiceFactory.get_service_by_name(collection.name)

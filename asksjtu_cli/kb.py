@@ -8,6 +8,7 @@ from typing import List
 
 from askadmin.db.models import KnowledgeBase, QACollection
 from asksjtu_cli.base import asksjtu
+from asksjtu_cli.utils import remove_kb as remove_kb_in_system
 
 
 @asksjtu.group()
@@ -22,9 +23,7 @@ def display_kb(kbs: List[KnowledgeBase]):
     table.add_column("Slug")
     table.add_column("Managers")
     for kb in kbs:
-        user_names = (
-            ", ".join([u.name for u in kb.users]) or "(None)"
-        )
+        user_names = ", ".join([u.name for u in kb.users]) or "(None)"
         table.add_row(str(kb.id), kb.name, kb.slug, user_names)
     return table
 
@@ -59,7 +58,7 @@ def list():
 
 
 @kb.command()
-@click.option("--name", type=str, required=True)
+@click.argument("name")
 @click.option("--slug", type=str, required=True)
 def update(name: str, slug: str):
     if name is None:
@@ -78,3 +77,25 @@ def update(name: str, slug: str):
     rich.print("[green]更新成功[/green]")
     kbs_table = display_kb([kb])
     rich.print(kbs_table)
+
+
+@kb.command()
+@click.argument("name")
+@click.option(
+    "--system",
+    is_flag=True,
+    help="If drop the kb in the langchain-chatchat system as well",
+    default=False,
+)
+def remove(name: str, system: bool = True):
+    """
+    Remove knowledge base from db of asksjtu
+    """
+    kb = KnowledgeBase.get_or_none(name=name)
+    if kb is None:
+        rich.print("[red]未找到指定知识库[/red]")
+        return
+    if system:
+        remove_kb_in_system(name)
+    kb.delete_instance()
+    rich.print("[green]删除成功[/green]")

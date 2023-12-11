@@ -2,7 +2,11 @@ import streamlit as st
 import pandas as pd
 from typing import List, Dict
 
-from server.knowledge_base.kb_service.base import KBServiceFactory
+from server.knowledge_base.kb_service.base import (
+    KBServiceFactory,
+    KnowledgeFile,
+    get_kb_file_details,
+)
 from server.qa_collection import utils as qa_utils
 from askadmin.db.base import db
 from askadmin.db.models import QA, QACollection
@@ -179,13 +183,19 @@ def display_qa_collection(collection: QACollection) -> None:
         disabled=["ID"],
     )
 
-    col_update, col_preview, _, _ = st.columns(4)
+    col_update, col_preview, _, col_remove_all_qa = st.columns(4)
 
     with col_update:
         update_button = st.button("更新问答库", type="primary", use_container_width=True)
 
     with col_preview:
         preview_button = st.button("预览", type="secondary", use_container_width=True)
+
+    with col_remove_all_qa:
+        # only show if `api` is available
+        remove_all_qa_button = st.button(
+            "删除所有问答", type="secondary", use_container_width=True
+        )
 
     if preview_button:
         diff = diff_qa_dict_list(df, updated)
@@ -202,6 +212,34 @@ def display_qa_collection(collection: QACollection) -> None:
             updated=updated,
             qas_dict=qas_dict,
         )
+        st.rerun()
+
+    if remove_all_qa_button:
+        """
+        1. remove docs from langchain-chatchat db
+        2. remove related docs in vector stores
+        3. remove qas from asksjtu db
+        """
+        kb = KBServiceFactory.get_service_by_name(collection.name)
+        if not kb:
+            st.error("问答库不存在，请联系管理员")
+            st.stop()
+        # 1. remove all files from langchain-chatchat db
+        doc_details = get_kb_file_details(collection.name)
+        doc_as_files = [
+            KnowledgeFile(
+                filename=doc["file_name"], knowledge_base_name=collection.name
+            )
+            for doc in doc_details
+        ]
+        for file in doc_as_files:
+            kb.delete_doc(file, delete_content=True)
+        # 2. clear vector store
+        kb.clear_vs()
+        # 3. remove all qas from asksjtu db
+        QA.delete().where(QA.collection == collection).execute()
+        # notify user
+        st.toast("问答库已清空", icon="🗑️")
         st.rerun()
 
 

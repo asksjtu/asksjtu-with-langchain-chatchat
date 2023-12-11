@@ -176,6 +176,9 @@ def update(username: str, name: Optional[str] = None, role: Optional[str] = None
 @click.option("--username", type=str, required=True)
 @click.option("--kb-name", type=str, required=True)
 def add_kb(username: str, kb_name: str):
+    """
+    Add user as the manager of the knowledge base
+    """
     user = User.get_or_none(User.username == username)
     if not user:
         rich.print("[red]user not found[/red]")
@@ -191,6 +194,9 @@ def add_kb(username: str, kb_name: str):
 @click.option("--username", type=str, required=True)
 @click.option("--kb-name", type=str, required=True)
 def remove_kb(username: str, kb_name: str):
+    """
+    Remove user from managers of the knowledge base
+    """
     # get user
     user = User.get_or_none(User.username == username)
     if not user:
@@ -208,6 +214,9 @@ def remove_kb(username: str, kb_name: str):
 @click.option("--username", type=str, required=True)
 @click.option("--qa-name", type=str, required=True)
 def add_qa(username: str, qa_name: str):
+    """
+    Add user as the manager of the QA collection
+    """
     user = User.get_or_none(User.username == username)
     if not user:
         rich.print("[red]user not found[/red]")
@@ -223,13 +232,16 @@ def add_qa(username: str, qa_name: str):
 @click.option("--username", type=str, required=True)
 @click.option("--qa-name", type=str, required=True)
 def remove_qa(username: str, qa_name: str):
+    """
+    Remove user from managers of the QA collection
+    """
     # get user
     user = User.get_or_none(User.username == username)
     if not user:
         rich.print("[red]user not found[/red]")
         return
     # get qa
-    qa = KnowledgeBase.get_or_none(QACollection.name == qa_name)
+    qa = QACollection.get_or_none(QACollection.name == qa_name)
     if not qa:
         rich.print("[red]knowledge base not found[/red]")
         return

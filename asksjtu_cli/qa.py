@@ -8,6 +8,7 @@ from typing import List, Optional
 
 from askadmin.db.models import KnowledgeBase, QACollection, QA
 from asksjtu_cli.base import asksjtu
+from asksjtu_cli.utils import remove_kb as remove_kb_in_system
 
 
 @asksjtu.group()
@@ -23,9 +24,7 @@ def display_qa_collection(collections: List[QACollection]):
     table.add_column("Slug")
     table.add_column("Managers")
     for c in collections:
-        managers = (
-            ", ".join([u.name for u in c.users]) or "(None)"
-        )
+        managers = ", ".join([u.name for u in c.users]) or "(None)"
         table.add_row(str(c.id), c.name, c.display_name, c.slug, managers)
     return table
 
@@ -38,7 +37,7 @@ def list():
 
 
 @qa.command()
-@click.option("--name", type=str, required=True)
+@click.argument("name")
 @click.option("--slug", type=str, required=True)
 def update(name: str, slug: str):
     if name is None:
@@ -57,3 +56,27 @@ def update(name: str, slug: str):
     rich.print("[green]更新成功[/green]")
     table = display_qa_collection([collection])
     rich.print(table)
+
+
+@qa.command()
+@click.argument("name")
+@click.option(
+    "--system",
+    is_flag=True,
+    help="Remove the corresponding knowledge base from system",
+    default=False,
+)
+def remove(name: str, system: bool):
+    """
+    Remove QA collection and related QAs from db of asksjtu
+    """
+    collection = QACollection.get_or_none(name=name)
+    if collection is None:
+        rich.print("[red]未找到指定问答库[/red]")
+        return
+    if system:
+        remove_kb_in_system(collection.name)
+    # ensure all related QA is removed
+    QA.delete().where(QA.collection == collection).execute()
+    collection.delete_instance()
+    rich.print("[green]删除成功[/green]")

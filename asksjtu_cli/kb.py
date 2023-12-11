@@ -39,7 +39,8 @@ def sync():
     # filter all QACollection
     existing_qa_collection_names = set([c.name for c in QACollection.select()])
     delta = kb_names - existing_kb_names - existing_qa_collection_names
-    # sync
+
+    # sync with new KBs
     new_kbs = []
     for name in delta:
         new_kbs.append(KnowledgeBase.create(name=name))
@@ -48,6 +49,28 @@ def sync():
     if len(new_kbs) > 0:
         kbs_table = display_kb(new_kbs)
         rich.print(kbs_table)
+
+    # warn with missing KBs
+    missing_kb_names = existing_kb_names - kb_names
+    if len(missing_kb_names) != 0:
+        rich.print(
+            f"[yellow]警告：发现 {len(missing_kb_names)} 个知识库在 asksjtu 库中，但不在 langchain-chatchat 库中[/yellow]"
+        )
+        missing_kb_name_str = ", ".join(
+            [f"[bold]{name}[/bold]" for name in missing_kb_names]
+        )
+        rich.print(f"[yellow]相关库名称：{missing_kb_name_str} [/yellow]")
+
+    # warn with missing QAs
+    missing_qa_collection_names = existing_qa_collection_names - kb_names
+    if len(missing_qa_collection_names) != 0:
+        rich.print(
+            f"[yellow]警告：发现 {len(missing_qa_collection_names)} 个问答集合在 asksjtu 库中，但不在 langchain-chatchat 库中[/yellow]"
+        )
+        missing_qa_collection_name_str = ", ".join(
+            [f"[bold]{name}[/bold]" for name in missing_qa_collection_names]
+        )
+        rich.print(f"[yellow]相关问答集合名称：{missing_qa_collection_name_str} [/yellow]")
 
 
 @kb.command()

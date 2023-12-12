@@ -68,6 +68,7 @@ async def qa_collection_query(
     if threshold is None:
         threshold = SCORE_THRESHOLD
 
+    origin_top_k = top_k
     if filter_by_answer:
         top_k = min(2 * top_k, top_k + 20)
 
@@ -103,6 +104,6 @@ async def qa_collection_query(
             if item.answer not in answers:
                 answers.add(item.answer)
                 filtered_items.append(item)
-        sorted_items = filtered_items[:top_k]
+        sorted_items = filtered_items[:origin_top_k]
 
     return QAQueryResponse(qas=sorted_items, query=query, answer=sorted_items[0].answer)

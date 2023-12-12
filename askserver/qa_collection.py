@@ -54,6 +54,7 @@ async def qa_collection_query(
     slug: str = Body(..., description="问答库标识符", examples=["samples"]),
     top_k: Annotated[Optional[int], Body(..., description="返回最匹配的前 k 个问题-答案对，最大为 50", ge=1, le=50)] = None,
     threshold: Annotated[Optional[float], Body(..., description="返回匹配度大于等于 threadshold 的问题-答案对", gt=0, lt=1)] = None,
+    filter_by_answer: Annotated[Optional[bool], Body(..., description="是否过滤所有答案相同的项")] = False,
     request: Request = None,
 ):
     collection: Optional[QACollection] = QACollection.get_or_none(slug=slug)
@@ -66,6 +67,9 @@ async def qa_collection_query(
         top_k = VECTOR_SEARCH_TOP_K
     if threshold is None:
         threshold = SCORE_THRESHOLD
+
+    if filter_by_answer:
+        top_k = min(2 * top_k, top_k + 20)
 
     # query vector store
     docs = search_docs(query, collection.name, top_k, threshold)
@@ -90,5 +94,15 @@ async def qa_collection_query(
         for qa in qas
     ]
     sorted_items = sorted(items, key=lambda x: x.score)
+
+    if filter_by_answer:
+        # filter by answer
+        answers = set()
+        filtered_items = []
+        for item in sorted_items:
+            if item.answer not in answers:
+                answers.add(item.answer)
+                filtered_items.append(item)
+        sorted_items = filtered_items[:top_k]
 
     return QAQueryResponse(qas=sorted_items, query=query, answer=sorted_items[0].answer)

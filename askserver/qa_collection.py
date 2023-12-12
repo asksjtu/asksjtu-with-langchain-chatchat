@@ -52,7 +52,7 @@ class QAQueryResponse(BaseModel):
 async def qa_collection_query(
     query: str = Body(..., description="用户输入", examples=["你好"]),
     slug: str = Body(..., description="问答库标识符", examples=["samples"]),
-    top_k: Annotated[Optional[int], Body(..., description="返回最匹配的前 k 个问题-答案对，最大为 10", ge=1, le=10)] = None,
+    top_k: Annotated[Optional[int], Body(..., description="返回最匹配的前 k 个问题-答案对，最大为 50", ge=1, le=50)] = None,
     threshold: Annotated[Optional[float], Body(..., description="返回匹配度大于等于 threadshold 的问题-答案对", gt=0, lt=1)] = None,
     request: Request = None,
 ):

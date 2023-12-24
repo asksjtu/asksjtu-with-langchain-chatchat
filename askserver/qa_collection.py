@@ -23,7 +23,8 @@ router = APIRouter()
 class QAQueryResponseItem(BaseModel):
     """ChatDocs model"""
 
-    question: str = Field(..., description="问题")
+    question: str = Field(..., description="标准问题")
+    alias: str = Field(..., description="入库内容，即用于搜索的内容")
     answer: str = Field(..., description="答案")
     score: float = Field(..., description="匹配度")
 
@@ -54,7 +55,7 @@ async def qa_collection_query(
     slug: str = Body(..., description="问答库标识符", examples=["samples"]),
     top_k: Annotated[Optional[int], Body(..., description="返回最匹配的前 k 个问题-答案对，最大为 50", ge=1, le=50)] = None,
     threshold: Annotated[Optional[float], Body(..., description="返回匹配度大于等于 threadshold 的问题-答案对", gt=0, lt=1)] = None,
-    filter_by_answer: Annotated[Optional[bool], Body(..., description="是否过滤所有答案相同的项")] = False,
+    filter_by_question: Annotated[Optional[bool], Body(..., description="是否过滤所有标准问题相同的项")] = True,
     request: Request = None,
 ):
     collection: Optional[QACollection] = QACollection.get_or_none(slug=slug)
@@ -69,8 +70,8 @@ async def qa_collection_query(
         threshold = SCORE_THRESHOLD
 
     origin_top_k = top_k
-    if filter_by_answer:
-        top_k = min(2 * top_k, top_k + 20)
+    if filter_by_question:
+        top_k = min(2 * top_k, top_k + 30)
 
     # query vector store
     docs = search_docs(query, collection.name, top_k, threshold)
@@ -90,19 +91,20 @@ async def qa_collection_query(
         QAQueryResponseItem(
             question=qa.question,
             answer=qa.answer,
+            alias=qa.alias,
             score=id_score_map[qa.id],
         )
         for qa in qas
     ]
     sorted_items = sorted(items, key=lambda x: x.score)
 
-    if filter_by_answer:
+    if filter_by_question:
         # filter by answer
-        answers = set()
+        questions = set()
         filtered_items = []
         for item in sorted_items:
-            if item.answer not in answers:
-                answers.add(item.answer)
+            if item.question not in questions:
+                questions.add(item.question)
                 filtered_items.append(item)
         sorted_items = filtered_items[:origin_top_k]
 

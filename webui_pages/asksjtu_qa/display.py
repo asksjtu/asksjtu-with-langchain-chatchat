@@ -12,8 +12,9 @@ from askadmin.db.base import db
 from askadmin.db.models import QA, QACollection
 
 
-ZH_QUESTION = "问题"
+ZH_QUESTION = "标准问题"
 ZH_ANSWER = "答案"
+ZH_ALIAS = "入库内容"
 ZH_VECTORIZED = "是否入库"
 ZH_IF_DELETE = "删除？"
 
@@ -157,6 +158,7 @@ def display_qa_collection(collection: QACollection) -> None:
     qas_dict = [
         dict(
             qa_id=qa.id,  # for updating
+            alias=qa.alias if len(qa.alias) != 0 else "(empty)",
             question=qa.question,
             answer=qa.answer,
             vectorized=qa.vectorized,
@@ -170,6 +172,7 @@ def display_qa_collection(collection: QACollection) -> None:
             "qa_id": "ID",
             "question": ZH_QUESTION,
             "answer": ZH_ANSWER,
+            "alias": ZH_ALIAS,
             "vectorized": ZH_VECTORIZED,
             "if_delete": ZH_IF_DELETE,
         },
@@ -277,4 +280,4 @@ def display_collection_slug(collection: QACollection, allow_edit: bool = False) 
             new_slug = st.text_input("问答库标识", value=collection.slug)
             submit = st.form_submit_button("更新", on_click=update_slug)
     else:
-        st.info(f"问答库标识：{collection.slug}")
+        st.info(f"问答库标识：[{collection.slug}](https://ask.sjtu.cn/?qa_slug={collection.slug})")

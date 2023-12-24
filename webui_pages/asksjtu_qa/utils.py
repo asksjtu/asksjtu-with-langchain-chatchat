@@ -56,6 +56,8 @@ def parse_qa_from_source(
     # remove `_x000D_` produced by carriage in xlsx source file
     for str_col in (question_field, answer_field):
         df[str_col] = df[str_col].astype(str).apply(openpyxl.utils.escape.unescape)
+    if alias_field is not None:
+        df[alias_field] = df[alias_field].astype(str).apply(openpyxl.utils.escape.unescape)
 
     # create QAs by iterating rows
     qa_list = [

@@ -22,12 +22,14 @@ KEY_QA_COLLECTION_CREATE_FORM = "QA-COLLECTION-CREATE-FORM"
 KEY_QA_COLLECTION_NEW_NAME = "new_qa_collection_name"
 KEY_QA_COLLECTION_NEW_SOURCE = "new_qa_collection_source"
 
-QA_QUESTION_COL_NAME = "问题"
+QA_QUESTION_COL_NAME = "标准问题"
 QA_ANSWER_COL_NAME = "答案"
-QA_ALIAS_COL_NAME = "关键词"
+QA_ALIAS_COL_NAME = "入库内容"
 
 
-def section_qa_create(collection: QACollection, api: Optional[ApiRequest] = None) -> None:
+def section_qa_create(
+    collection: QACollection, api: Optional[ApiRequest] = None
+) -> None:
     def create_qa():
         question = st.session_state.get(KEY_QA_NEW_QUESTION, "")
         answer = st.session_state.get(KEY_QA_NEW_ANSWER, "")
@@ -67,7 +69,7 @@ def section_qa_create(collection: QACollection, api: Optional[ApiRequest] = None
                 source,
                 question_field=QA_QUESTION_COL_NAME,
                 answer_field=QA_ANSWER_COL_NAME,
-                alias_field=None,
+                alias_field=QA_ALIAS_COL_NAME,
             )
         except ValueError as e:
             st.error(e)
@@ -100,9 +102,9 @@ def section_qa_create(collection: QACollection, api: Optional[ApiRequest] = None
             st.error("未找到 QACollection 对应的知识库")
             return
         qa_utils.vectorize_multiple(kb, qa_list)
-        
-        st.success(f"共导入 {len(qa_list)} 条记录")
 
+        st.success(f"共导入 {len(qa_list)} 条记录")
+        st.rerun()
 
     with st.expander("创建/导入新问答"):
         # form for creating single and form for importing multiple
@@ -121,7 +123,7 @@ def section_qa_create(collection: QACollection, api: Optional[ApiRequest] = None
             with st.form(KEY_QA_IMPORT_FROM_FILE, border=False):
                 # allow upload file
                 st.file_uploader(
-                    "从文件中导入：",
+                    "从文件中导入（文件中需要包含 `标准问题`、`答案`、`入库内容` 三列）：",
                     type=["csv", "xlsx", "xls"],
                     key=KEY_QA_IMPORT_FROM_FILE_INPUT_FILE,
                 )
@@ -150,7 +152,7 @@ def section_qa_collection_create(api: ApiRequest) -> None:
                     source,
                     question_field=QA_QUESTION_COL_NAME,
                     answer_field=QA_ANSWER_COL_NAME,
-                    alias_field=None,
+                    alias_field=QA_ALIAS_COL_NAME,
                 )
             except ValueError as e:
                 st.error(e)
@@ -197,7 +199,7 @@ def section_qa_collection_create(api: ApiRequest) -> None:
             st.error("未找到 QACollection 对应的知识库")
             return
         qa_utils.vectorize_multiple(kb, qa_list)
-        
+
         st.success(f"问答库 {name} 已创建，共导入 {len(qa_list)} 条记录")
         return
 
@@ -205,7 +207,9 @@ def section_qa_collection_create(api: ApiRequest) -> None:
         # widgets for name
         st.text_input("问答库名称：", placeholder="请输入问答库名称", key=KEY_QA_COLLECTION_NEW_NAME)
         st.file_uploader(
-            "从文件中导入：", type=["csv", "xlsx", "xls"], key=KEY_QA_COLLECTION_NEW_SOURCE
+            "从文件中导入（文件中需要包含 `标准问题`、`答案`、`入库内容` 三列）：",
+            type=["csv", "xlsx", "xls"],
+            key=KEY_QA_COLLECTION_NEW_SOURCE,
         )
         # submit button
         st.form_submit_button("创建新问答库", on_click=create_qa_collection)

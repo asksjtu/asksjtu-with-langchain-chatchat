@@ -12,9 +12,7 @@ from server.knowledge_base.kb_service.base import KBService
 from askadmin.db.models import QA
 
 
-def qa_to_document(
-    qa: QA, with_answer: bool = False, with_alias: bool = False
-) -> Document:
+def qa_to_document(qa: QA) -> Document:
     """
     Convert a QA to a Document object with the following metadata:
         - source: collection_d
@@ -22,15 +20,14 @@ def qa_to_document(
         - answer: answer
         - qa_id: id of QA if applied
 
-    :params with_answer: specify if answer should be embeded
-    :params with_alias: specify if alias should be embeded
+    The default strategy for chosing content for embedding is: the `alias`
+    field will be used for embedding. If `alias` field is empty, the `question`
+    field will be used instead.
+
+    :params qa: a QA object with question, answer and alias
     """
-    content_list = [
-        f"- 问题：{qa.question}",
-        f"- 答案：{qa.answer}" if with_answer else "",
-        f"- 关键词：{qa.alias}" if with_alias else "",
-    ]
-    content = "\n".join(content_list)
+    # get content for embedding
+    content = qa.alias if len(qa.alias) != 0 else qa.question
     metadata = {
         "source": qa.collection.id,
         "question": qa.question,
@@ -46,8 +43,6 @@ def qa_to_document(
 def vectorize_multiple(
     kb: KBService,
     qa_list: List[QA],
-    with_answer: bool = False,
-    with_alias: bool = False,
 ):
     """
     Embed multiple QAs and insert to vector store
@@ -63,9 +58,7 @@ def vectorize_multiple(
     5. Update `vectorized` field of these QAs to True
     """
     # create `Document` objects for QAs and set metadata
-    qa_docs = [
-        qa_to_document(qa, with_answer=with_answer, with_alias=with_alias) for qa in qa_list
-    ]
+    qa_docs = [qa_to_document(qa) for qa in qa_list]
     # create embedding for these objects and save to vs
     if ZH_TITLE_ENHANCE:
         qa_docs = text_splitter.zh_title_enhance(qa_docs)
@@ -103,10 +96,11 @@ def delete_docs_by_id(kb: KBService, doc_ids: List[str]):
     from server.knowledge_base.kb_service.milvus_kb_service import MilvusKBService
     from server.knowledge_base.kb_service.faiss_kb_service import FaissKBService
     from server.knowledge_base.kb_service.pg_kb_service import PGKBService
+
     if isinstance(kb, MilvusKBService):
         if kb.milvus.col:
             doc_ids = [int(pk) for pk in doc_ids]
-            kb.milvus.col.delete(expr=f'pk in {doc_ids}')
+            kb.milvus.col.delete(expr=f"pk in {doc_ids}")
     elif isinstance(kb, FaissKBService):
         with kb.load_vector_store().acquire() as vs:
             vs.delete(doc_ids)

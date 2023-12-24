@@ -70,6 +70,7 @@ def user_ask(collection: QACollection, question: str):
             [
                 f"**Q:** {most_matched_qa.question}",
                 f"**A:** {most_matched_qa.answer}",
+                f"**M:** {most_matched_qa.alias}",
                 f"---\n",
             ]
         )
@@ -87,8 +88,11 @@ def user_ask(collection: QACollection, question: str):
         if not qa:
             continue
         chat_box.insert_msg(Markdown(
-            title=f"[{doc.score:.4f}] {qa.question}",
-            content=qa.answer,
+            title=f"[{doc.score:.4f}] {qa.alias}",
+            content="\n\n".join([
+                f"**Q:** {most_matched_qa.question}",
+                f"**A:** {most_matched_qa.answer}",
+            ]),
             in_expander=True,
             state="complete",
         ))

@@ -1,7 +1,6 @@
 streamlit-analytics
 extra_streamlit_components
 PyJWT
-tinydb
 click
 rich
 peewee

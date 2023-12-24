@@ -1,4 +1,4 @@
-from datatime import date
+from datetime import date
 
 # 默认知识库
 DEFAULT_KNOWLEDGE_BASE_NAME = "常用知识库"

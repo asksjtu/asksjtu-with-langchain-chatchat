@@ -41,3 +41,16 @@ class QA(Model):
 
     class Meta:
         database = db
+
+
+class QAAnalytics(Model):
+    qa = pw.ForeignKeyField(QA, backref="analytics")
+    query = pw.TextField()  # user's query
+    query_id = pw.UUIDField()  # id of this query
+    rank = pw.IntegerField()  # rank of this QA in the search result
+    top_k = pw.IntegerField()  # top_k used in the search
+    score = pw.FloatField()  # score of this QA in the search result
+    timestamp = pw.DateTimeField()  # timestamp of this query
+
+    class Meta:
+        database = db

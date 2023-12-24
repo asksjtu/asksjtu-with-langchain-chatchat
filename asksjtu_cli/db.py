@@ -26,6 +26,7 @@ def create():
             models.KnowledgeBase,
             UserKnowledgeBase,
             models.QA,
+            models.QAAnalytics,
             models.QACollection,
             UserQACollection,
         ]

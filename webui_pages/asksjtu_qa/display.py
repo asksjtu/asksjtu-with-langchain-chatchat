@@ -10,6 +10,7 @@ from server.knowledge_base.kb_service.base import (
 from server.qa_collection import utils as qa_utils
 from askadmin.db.base import db
 from askadmin.db.models import QA, QACollection
+from askadmin.sync.qa import QASyncWorker
 
 
 ZH_QUESTION = "标准问题"
@@ -17,13 +18,23 @@ ZH_ANSWER = "答案"
 ZH_ALIAS = "入库内容"
 ZH_VECTORIZED = "是否入库"
 ZH_IF_DELETE = "删除？"
+ZH_POPULAR = "是否热门？"
+ZH_POPULAR_RANK = "热门排名"
 
 
 def diff_qa_dict_list(
     origin: pd.DataFrame,
     updated: pd.DataFrame,
     key: str = "ID",
-    columns: List[str] = [ZH_VECTORIZED, ZH_IF_DELETE, ZH_QUESTION, ZH_ANSWER],
+    columns: List[str] = [
+        ZH_VECTORIZED,
+        ZH_IF_DELETE,
+        ZH_QUESTION,
+        ZH_ALIAS,
+        ZH_ANSWER,
+        ZH_POPULAR,
+        ZH_POPULAR_RANK,
+    ],
 ) -> List[Dict]:
     """
     Compare updated and origin dataframe of QAs and return the difference in updated df
@@ -76,9 +87,9 @@ def update_qas(
     to_remove = []
     for updated_qa in diff:
         origin_qa_dict = origin_qa_id_map[updated_qa["ID"]]
-        if origin_qa_dict["vectorized"] and (
-            origin_qa_dict["question"] != updated_qa[ZH_QUESTION]
-            or origin_qa_dict["answer"] != updated_qa[ZH_ANSWER]
+        if (
+            origin_qa_dict["vectorized"]
+            and origin_qa_dict["alias"] != updated_qa[ZH_ALIAS]
         ):
             to_remove.append(updated_qa["ID"])
             continue
@@ -98,10 +109,7 @@ def update_qas(
         if not origin_qa_dict["vectorized"]:
             to_add.append(updated_qa["ID"])
             continue
-        if (
-            origin_qa_dict["question"] != updated_qa[ZH_QUESTION]
-            or origin_qa_dict["answer"] != updated_qa[ZH_ANSWER]
-        ):
+        if origin_qa_dict["alias"] != updated_qa[ZH_ALIAS]:
             to_add.append(updated_qa["ID"])
             continue
 
@@ -123,16 +131,22 @@ def update_qas(
     for updated_qa in diff:
         origin_qa_dict = origin_qa_id_map[updated_qa["ID"]]
         if (
-            updated_qa[ZH_QUESTION] != origin_qa_dict["question"]
+            updated_qa[ZH_ALIAS] != origin_qa_dict["alias"]
+            or updated_qa[ZH_QUESTION] != origin_qa_dict["question"]
             or updated_qa[ZH_ANSWER] != origin_qa_dict["answer"]
+            or updated_qa[ZH_POPULAR] != origin_qa_dict["popular"]
+            or updated_qa[ZH_POPULAR_RANK] != origin_qa_dict["popular_rank"]
         ):
             to_update.append(updated_qa["ID"])
     if len(to_update) != 0:
         to_update_qas = QA.select().where(QA.id.in_(to_update))
         for qa in to_update_qas:
-            qa.question = diff_id_map[qa.id][ZH_QUESTION]
+            qa.alias = diff_id_map[qa.id][ZH_ALIAS]
             qa.answer = diff_id_map[qa.id][ZH_ANSWER]
-        QA.bulk_update(to_update_qas, fields=[QA.question, QA.answer])
+            qa.question = diff_id_map[qa.id][ZH_QUESTION]
+            qa.popular = diff_id_map[qa.id][ZH_POPULAR]
+            qa.popular_rank = diff_id_map[qa.id][ZH_POPULAR_RANK]
+        QA.bulk_update(to_update_qas, fields=[QA.alias, QA.question, QA.answer, QA.popular, QA.popular_rank])
 
     # 5. Remove QAs with `if_delete` set to True
     to_delete = []
@@ -163,6 +177,8 @@ def display_qa_collection(collection: QACollection) -> None:
             answer=qa.answer,
             vectorized=qa.vectorized,
             if_delete=False,  # set init value to false
+            popular=qa.popular,
+            popular_rank=qa.popular_rank,
         )
         for qa in qas
     ]
@@ -175,6 +191,8 @@ def display_qa_collection(collection: QACollection) -> None:
             "alias": ZH_ALIAS,
             "vectorized": ZH_VECTORIZED,
             "if_delete": ZH_IF_DELETE,
+            "popular": ZH_POPULAR,
+            "popular_rank": ZH_POPULAR_RANK,
         },
         inplace=True,
     )
@@ -186,13 +204,20 @@ def display_qa_collection(collection: QACollection) -> None:
         disabled=["ID"],
     )
 
-    col_update, col_preview, _, col_remove_all_qa = st.columns(4)
+    # two rows
+    # #0: update, preview, _, sync
+    # #1: _, _, _, remove all
+    col_update, col_preview, _, col_sync_with_nic= st.columns(4)
+    _, _, _, col_remove_all_qa = st.columns(4)
 
     with col_update:
         update_button = st.button("更新问答库", type="primary", use_container_width=True)
 
     with col_preview:
-        preview_button = st.button("预览", type="secondary", use_container_width=True)
+        preview_button = st.button("预览变更", type="secondary", use_container_width=True)
+
+    with col_sync_with_nic:
+        sync_button = st.button("同步到 NIC 数据库", type="primary", use_container_width=True)
 
     with col_remove_all_qa:
         # only show if `api` is available
@@ -215,6 +240,15 @@ def display_qa_collection(collection: QACollection) -> None:
             updated=updated,
             qas_dict=qas_dict,
         )
+        st.rerun()
+
+    if sync_button:
+        worker = QASyncWorker()
+        resp = worker.sync(collection)
+        data = resp.json()
+        if "error" in data and len(data["error"]) != 0:
+            st.error(f"同步失败：{data['error']}", icon="🚫")
+            return
         st.rerun()
 
     if remove_all_qa_button:
@@ -280,4 +314,6 @@ def display_collection_slug(collection: QACollection, allow_edit: bool = False) 
             new_slug = st.text_input("问答库标识", value=collection.slug)
             submit = st.form_submit_button("更新", on_click=update_slug)
     else:
-        st.info(f"问答库标识：[{collection.slug}](https://ask.sjtu.cn/?qa_slug={collection.slug})")
+        st.info(
+            f"问答库标识：[{collection.slug}](https://ask.sjtu.cn/?qa_slug={collection.slug})"
+        )

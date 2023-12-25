@@ -38,6 +38,9 @@ class QA(Model):
     answer = pw.TextField()
     alias = pw.TextField(default="")
     vectorized = pw.BooleanField(default=False)
+    # popularRank is not meaningful if popular is False
+    popular = pw.BooleanField(default=False)
+    popular_rank = pw.IntegerField(default=0)
 
     class Meta:
         database = db

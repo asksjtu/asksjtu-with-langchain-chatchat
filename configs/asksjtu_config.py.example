@@ -54,3 +54,8 @@ DEFAULT_DISCLAIMER_TEXT = """\
 
 # 在知识库中没有找到文档时的默认回答
 DEFAULT_REPLY_WHEN_NO_DOCS = "根据已知信息无法回答该问题。"
+
+# 同步接口
+ENDPOINTS = {
+    "qa_sync": "/api/question/data/upload",
+}

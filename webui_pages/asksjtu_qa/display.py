@@ -247,7 +247,7 @@ def display_qa_collection(collection: QACollection) -> None:
         resp = worker.sync(collection)
         data = resp.json()
         if "errno" in data:
-            if data["error"] != 0:
+            if data["errno"] != 0:
                 st.error(f"同步失败：{data['error']}", icon="🚫")
                 return
             else:

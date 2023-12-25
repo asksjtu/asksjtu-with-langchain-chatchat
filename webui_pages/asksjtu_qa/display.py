@@ -246,9 +246,12 @@ def display_qa_collection(collection: QACollection) -> None:
         worker = QASyncWorker()
         resp = worker.sync(collection)
         data = resp.json()
-        if "error" in data and len(data["error"]) != 0:
-            st.error(f"同步失败：{data['error']}", icon="🚫")
-            return
+        if "errno" in data:
+            if data["error"] != 0:
+                st.error(f"同步失败：{data['error']}", icon="🚫")
+                return
+            else:
+                st.toast("同步成功", icon="🎉")
         st.rerun()
 
     if remove_all_qa_button:

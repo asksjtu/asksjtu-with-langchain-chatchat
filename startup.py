@@ -36,6 +36,7 @@ from server.utils import (fschat_controller_address, fschat_model_worker_address
                           fschat_openai_api_address, set_httpx_config, get_httpx_client,
                           get_model_worker_config, get_all_model_worker_configs,
                           MakeFastAPIOffline, FastAPI, llm_device, embedding_device)
+from server.knowledge_base.migrate import create_tables
 import argparse
 from typing import Tuple, List, Dict
 from configs import VERSION
@@ -127,7 +128,7 @@ def create_model_worker_app(log_level: str = "INFO", **kwargs) -> FastAPI:
             args.conv_template = None
             args.limit_worker_concurrency = 5
             args.no_register = False
-            args.num_gpus = 4 # vllm worker的切分是tensor并行，这里填写显卡的数量
+            args.num_gpus = 1 # vllm worker的切分是tensor并行，这里填写显卡的数量
             args.engine_use_ray = False
             args.disable_log_requests = False
 
@@ -866,6 +867,8 @@ async def start_main_server():
                 logger.info("Process status: %s", p)
 
 if __name__ == "__main__":
+    # 确保数据库表被创建
+    create_tables()
 
     if sys.version_info < (3, 10):
         loop = asyncio.get_event_loop()

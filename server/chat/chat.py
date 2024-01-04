@@ -1,5 +1,5 @@
 from fastapi import Body
-from fastapi.responses import StreamingResponse
+from sse_starlette.sse import EventSourceResponse
 from configs import LLM_MODELS, TEMPERATURE
 from server.utils import wrap_done, get_ChatOpenAI
 from langchain.chains import LLMChain
@@ -29,7 +29,7 @@ async def chat(query: str = Body(..., description="用户输入", examples=["恼
                                                          ),
                stream: bool = Body(False, description="流式输出"),
                model_name: str = Body(LLM_MODELS[0], description="LLM 模型名称。"),
-               temperature: float = Body(TEMPERATURE, description="LLM 采样温度", ge=0.0, le=1.0),
+               temperature: float = Body(TEMPERATURE, description="LLM 采样温度", ge=0.0, le=2.0),
                max_tokens: Optional[int] = Body(None, description="限制LLM生成Token数量，默认None代表模型最大值"),
                # top_p: float = Body(TOP_P, description="LLM 核采样。勿与temperature同时设置", gt=0.0, lt=1.0),
                prompt_name: str = Body("default", description="使用的prompt模板名称(在configs/prompt_config.py中配置)"),
@@ -40,13 +40,12 @@ async def chat(query: str = Body(..., description="用户输入", examples=["恼
         callbacks = [callback]
         memory = None
 
-        if conversation_id:
-            message_id = add_message_to_db(chat_type="llm_chat", query=query, conversation_id=conversation_id)
-            # 负责保存llm response到message db
-            conversation_callback = ConversationCallbackHandler(conversation_id=conversation_id, message_id=message_id,
-                                                                chat_type="llm_chat",
-                                                                query=query)
-            callbacks.append(conversation_callback)
+        # 负责保存llm response到message db
+        message_id = add_message_to_db(chat_type="llm_chat", query=query, conversation_id=conversation_id)
+        conversation_callback = ConversationCallbackHandler(conversation_id=conversation_id, message_id=message_id,
+                                                            chat_type="llm_chat",
+                                                            query=query)
+        callbacks.append(conversation_callback)
 
         if isinstance(max_tokens, int) and max_tokens <= 0:
             max_tokens = None
@@ -101,4 +100,4 @@ async def chat(query: str = Body(..., description="用户输入", examples=["恼
 
         await task
 
-    return StreamingResponse(chat_iterator(), media_type="text/event-stream")
+    return EventSourceResponse(chat_iterator())

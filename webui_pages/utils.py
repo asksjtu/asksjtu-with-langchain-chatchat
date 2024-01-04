@@ -133,8 +133,10 @@ class ApiRequest:
                             continue
                         if as_json:
                             try:
-                                data = json.loads(chunk)
-                                # pprint(data, depth=1)
+                                if chunk.startswith("data: "):
+                                    data = json.loads(chunk[6:-2])
+                                else:
+                                    data = json.loads(chunk)
                                 yield data
                             except Exception as e:
                                 msg = f"接口返回json错误： ‘{chunk}’。错误信息是：{e}。"
@@ -165,8 +167,10 @@ class ApiRequest:
                             continue
                         if as_json:
                             try:
-                                data = json.loads(chunk)
-                                # pprint(data, depth=1)
+                                if chunk.startswith("data: "):
+                                    data = json.loads(chunk[6:-2])
+                                else:
+                                    data = json.loads(chunk)
                                 yield data
                             except Exception as e:
                                 msg = f"接口返回json错误： ‘{chunk}’。错误信息是：{e}。"
@@ -255,38 +259,6 @@ class ApiRequest:
         return self._get_response_value(response, value_func=lambda r: r.text)
 
     # 对话相关操作
-
-    def chat_fastchat(
-        self,
-        messages: List[Dict],
-        stream: bool = True,
-        model: str = LLM_MODELS[0],
-        temperature: float = TEMPERATURE,
-        max_tokens: int = None,
-        **kwargs: Any,
-    ):
-        '''
-        对应api.py/chat/fastchat接口
-        '''
-        data = {
-            "messages": messages,
-            "stream": stream,
-            "model": model,
-            "temperature": temperature,
-            "max_tokens": max_tokens,
-        }
-
-        # print(f"received input message:")
-        # pprint(data)
-
-        response = self.post(
-            "/chat/fastchat",
-            json=data,
-            stream=True,
-            **kwargs,
-        )
-        return self._httpx_stream2generator(response)
-
     def chat_chat(
             self,
             query: str,
@@ -567,10 +539,12 @@ class ApiRequest:
 
     def search_kb_docs(
         self,
-        query: str,
         knowledge_base_name: str,
+        query: str = "",
         top_k: int = VECTOR_SEARCH_TOP_K,
         score_threshold: int = SCORE_THRESHOLD,
+        file_name: str = "",
+        metadata: dict = {},
     ) -> List:
         '''
         对应api.py/knowledge_base/search_docs接口
@@ -580,6 +554,8 @@ class ApiRequest:
             "knowledge_base_name": knowledge_base_name,
             "top_k": top_k,
             "score_threshold": score_threshold,
+            "file_name": file_name,
+            "metadata": metadata,
         }
 
         response = self.post(
@@ -587,6 +563,24 @@ class ApiRequest:
             json=data,
         )
         return self._get_response_value(response, as_json=True)
+
+    def update_docs_by_id(
+        self,
+        knowledge_base_name: str,
+        docs: Dict[str, Dict],
+    ) -> bool:
+        '''
+        对应api.py/knowledge_base/update_docs_by_id接口
+        '''
+        data = {
+            "knowledge_base_name": knowledge_base_name,
+            "docs": docs,
+        }
+        response = self.post(
+            "/knowledge_base/update_docs_by_id",
+            json=data
+        )
+        return self._get_response_value(response)
 
     def upload_kb_docs(
         self,
@@ -1031,10 +1025,6 @@ def check_success_msg(data: Union[str, dict, list], key: str = "msg") -> str:
 if __name__ == "__main__":
     api = ApiRequest()
     aapi = AsyncApiRequest()
-
-    # print(api.chat_fastchat(
-    #     messages=[{"role": "user", "content": "hello"}]
-    # ))
 
     # with api.chat_chat("你好") as r:
     #     for t in r.iter_text(None):

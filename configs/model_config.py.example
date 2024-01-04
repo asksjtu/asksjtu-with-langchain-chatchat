@@ -11,6 +11,12 @@ EMBEDDING_MODEL = "bge-large-zh"
 # Embedding 模型运行设备。设为"auto"会自动检测，也可手动设定为"cuda","mps","cpu"其中之一。
 EMBEDDING_DEVICE = "auto"
 
+# 选用的reranker模型
+RERANKER_MODEL = "bge-reranker-large"
+# 是否启用reranker模型
+USE_RERANKER = False
+RERANKER_MAX_LENGTH = 1024
+
 # 如果需要在 EMBEDDING_MODEL 中增加自定义的关键字时配置
 EMBEDDING_KEYWORD_FILE = "keywords.txt"
 EMBEDDING_MODEL_OUTPUT_PATH = "output"
@@ -19,7 +25,10 @@ EMBEDDING_MODEL_OUTPUT_PATH = "output"
 # 列表中第一个模型将作为 API 和 WEBUI 的默认模型。
 # 在这里，我们使用目前主流的两个离线模型，其中，chatglm3-6b 为默认加载模型。
 # 如果你的显存不足，可使用 Qwen-1_8B-Chat, 该模型 FP16 仅需 3.8G显存。
-LLM_MODELS = ["chatglm3-6b", "zhipu-api", "openai-api"] # "Qwen-1_8B-Chat",
+
+# chatglm3-6b输出角色标签<|user|>及自问自答的问题详见项目wiki->常见问题->Q20.
+
+LLM_MODELS = ["chatglm3-6b", "zhipu-api", "openai-api"]  # "Qwen-1_8B-Chat",
 
 # AgentLM模型的名称 (可以不指定，指定之后就锁定进入Agent之后的Chain的模型，不指定就是LLM_MODELS[0])
 Agent_MODEL = None
@@ -96,6 +105,7 @@ ONLINE_LLM_MODEL = {
         "version": "qwen-turbo",  # 可选包括 "qwen-turbo", "qwen-plus"
         "api_key": "",  # 请在阿里云控制台模型服务灵积API-KEY管理页面创建
         "provider": "QwenWorker",
+        "embed_model": "text-embedding-v1" # embedding 模型名称
     },
 
     # 百川 API，申请方式请参考 https://www.baichuan-ai.com/home#api-enter
@@ -177,7 +187,10 @@ MODEL_PATH = {
 
         "Qwen-14B": "Qwen/Qwen-14B",
         "Qwen-14B-Chat": "Qwen/Qwen-14B-Chat",
+
         "Qwen-14B-Chat-Int8": "Qwen/Qwen-14B-Chat-Int8",
+        # 在新版的transformers下需要手动修改模型的config.json文件，在quantization_config字典中
+        # 增加`disable_exllama:true` 字段才能启动qwen的量化模型
         "Qwen-14B-Chat-Int4": "Qwen/Qwen-14B-Chat-Int4",
 
         "Qwen-72B": "Qwen/Qwen-72B",
@@ -229,8 +242,13 @@ MODEL_PATH = {
         "agentlm-13b": "THUDM/agentlm-13b",
         "agentlm-70b": "THUDM/agentlm-70b",
 
-        "Yi-34B-Chat": "https://huggingface.co/01-ai/Yi-34B-Chat",
+        "Yi-34B-Chat": "01-ai/Yi-34B-Chat",
     },
+    "reranker":{
+        "bge-reranker-large":"BAAI/bge-reranker-large",
+        "bge-reranker-base":"BAAI/bge-reranker-base",
+        #TODO 增加在线reranker，如cohere
+    }
 }
 
 

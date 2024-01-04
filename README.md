@@ -22,15 +22,10 @@ pip install -r requirements_asksjtu.txt
 依赖安装完成后需要创建配置文件，命令总结如下：
 
 ```bash
-cp configs/asksjtu_config.py.example configs/asksjtu_config.py
-cp configs/basic_config.py.example configs/basic_config.py
-cp configs/model_config.py.example configs/model_config.py
-cp configs/kb_config.py.example configs/kb_config.py
-cp configs/prompt_config.py.example configs/prompt_config.py
-cp configs/server_config.py.example configs/server_config.py
+python copy_config_example.py
 ```
 
-配置完成后需要进行数据库的初始化，Langchain-Chatchat 项目相关的知识库初始化可以参考 [README](./README.md)，命令总结如下：
+配置完成后需要进行数据库的初始化，Langchain-Chatchat 项目相关的知识库初始化可以参考 [README](./README_upstream.md)，命令总结如下：
 
 ```bash
 # 初始化向量数据库

@@ -71,7 +71,8 @@ def list_files_from_folder(kb_name: str):
                 for target_entry in target_it:
                     process_entry(target_entry)
         elif entry.is_file():
-            result.append(entry.path)
+            file_path = (Path(os.path.relpath(entry.path, doc_path)).as_posix()) # 路径统一为 posix 格式
+            result.append(file_path)
         elif entry.is_dir():
             with os.scandir(entry.path) as it:
                 for sub_entry in it:
@@ -85,6 +86,7 @@ def list_files_from_folder(kb_name: str):
 
 
 LOADER_DICT = {"UnstructuredHTMLLoader": ['.html'],
+               "MHTMLLoader": ['.mhtml'],
                "UnstructuredMarkdownLoader": ['.md'],
                "JSONLoader": [".json"],
                "JSONLinesLoader": [".jsonl"],
@@ -94,7 +96,7 @@ LOADER_DICT = {"UnstructuredHTMLLoader": ['.html'],
                "RapidOCRLoader": ['.png', '.jpg', '.jpeg', '.bmp'],
                "UnstructuredEmailLoader": ['.eml', '.msg'],
                "UnstructuredEPubLoader": ['.epub'],
-               "UnstructuredExcelLoader": ['.xlsx', '.xlsd'],
+               "UnstructuredExcelLoader": ['.xlsx', '.xls', '.xlsd'],
                "NotebookLoader": ['.ipynb'],
                "UnstructuredODTLoader": ['.odt'],
                "PythonLoader": ['.py'],
@@ -103,9 +105,10 @@ LOADER_DICT = {"UnstructuredHTMLLoader": ['.html'],
                "SRTLoader": ['.srt'],
                "TomlLoader": ['.toml'],
                "UnstructuredTSVLoader": ['.tsv'],
-               "UnstructuredWordDocumentLoader": ['.docx', 'doc'],
+               "UnstructuredWordDocumentLoader": ['.docx', '.doc'],
                "UnstructuredXMLLoader": ['.xml'],
                "UnstructuredPowerPointLoader": ['.ppt', '.pptx'],
+               "EverNoteLoader": ['.enex'],
                "UnstructuredFileLoader": ['.txt'],
                }
 SUPPORTED_EXTS = [ext for sublist in LOADER_DICT.values() for ext in sublist]
@@ -270,7 +273,7 @@ class KnowledgeFile:
         对应知识库目录中的文件，必须是磁盘上存在的才能进行向量化等操作。
         '''
         self.kb_name = knowledge_base_name
-        self.filename = filename
+        self.filename = str(Path(filename).as_posix())
         self.ext = os.path.splitext(filename)[-1].lower()
         if self.ext not in SUPPORTED_EXTS:
             raise ValueError(f"暂未支持的文件格式 {self.filename}")

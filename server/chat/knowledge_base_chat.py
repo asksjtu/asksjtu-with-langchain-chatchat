@@ -1,6 +1,14 @@
 from fastapi import Body, Request
-from fastapi.responses import StreamingResponse
-from configs import (LLM_MODELS, VECTOR_SEARCH_TOP_K, SCORE_THRESHOLD, TEMPERATURE)
+from sse_starlette.sse import EventSourceResponse
+from fastapi.concurrency import run_in_threadpool
+from configs import (LLM_MODELS, 
+                     VECTOR_SEARCH_TOP_K, 
+                     SCORE_THRESHOLD, 
+                     TEMPERATURE,
+                     USE_RERANKER,
+                     RERANKER_MODEL,
+                     RERANKER_MAX_LENGTH,
+                     MODEL_PATH)
 from server.utils import wrap_done, get_ChatOpenAI
 from server.utils import BaseResponse, get_prompt_template
 from langchain.chains import LLMChain
@@ -10,14 +18,13 @@ import asyncio
 from langchain.prompts.chat import ChatPromptTemplate
 from server.chat.utils import History
 from server.knowledge_base.kb_service.base import KBServiceFactory
-from server.knowledge_base.utils import get_doc_path
 import json
 import os
 from pathlib import Path
 from urllib.parse import urlencode
 from server.knowledge_base.kb_doc_api import search_docs
-
-
+from server.reranker.reranker import LangchainReranker
+from server.utils import embedding_device
 async def knowledge_base_chat(query: str = Body(..., description="用户输入", examples=["你好"]),
                               knowledge_base_name: str = Body(..., description="知识库名称", examples=["samples"]),
                               top_k: int = Body(VECTOR_SEARCH_TOP_K, description="匹配向量数"),
@@ -59,7 +66,7 @@ async def knowledge_base_chat(query: str = Body(..., description="用户输入",
             query: str,
             top_k: int,
             history: Optional[List[History]],
-            model_name: str = LLM_MODELS[0],
+            model_name: str = model_name,
             prompt_name: str = prompt_name,
     ) -> AsyncIterable[str]:
         nonlocal max_tokens
@@ -73,7 +80,27 @@ async def knowledge_base_chat(query: str = Body(..., description="用户输入",
             max_tokens=max_tokens,
             callbacks=[callback],
         )
-        docs = search_docs(query, knowledge_base_name, top_k, score_threshold)
+        docs = await run_in_threadpool(search_docs,
+                                       query=query,
+                                       knowledge_base_name=knowledge_base_name,
+                                       top_k=top_k,
+                                       score_threshold=score_threshold)
+
+        # 加入reranker
+        if USE_RERANKER:
+            reranker_model_path = MODEL_PATH["reranker"].get(RERANKER_MODEL,"BAAI/bge-reranker-large")
+            print("-----------------model path------------------")
+            print(reranker_model_path)
+            reranker_model = LangchainReranker(top_n=top_k,
+                                            device=embedding_device(),
+                                            max_length=RERANKER_MAX_LENGTH,
+                                            model_name_or_path=reranker_model_path
+                                            )
+            print(docs)
+            docs = reranker_model.compress_documents(documents=docs,
+                                                     query=query)
+            print("---------after rerank------------------")
+            print(docs)
         context = "\n".join([doc.page_content for doc in docs])
 
         prompt_template = get_prompt_template("knowledge_base_chat", prompt_name, knowledge_base_name)
@@ -123,9 +150,5 @@ async def knowledge_base_chat(query: str = Body(..., description="用户输入",
                              ensure_ascii=False)
         await task
 
-    return StreamingResponse(knowledge_base_chat_iterator(query=query,
-                                                          top_k=top_k,
-                                                          history=history,
-                                                          model_name=model_name,
-                                                          prompt_name=prompt_name),
-                             media_type="text/event-stream")
+    return EventSourceResponse(knowledge_base_chat_iterator(query, top_k, history,model_name,prompt_name))
+

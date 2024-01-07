@@ -13,7 +13,7 @@ def edit_display_name(db_kb: KnowledgeBase):
     def update_display_name():
         display_name = st.session_state.get("new_kb_display_name", "")
         if display_name == "" or display_name is None:
-            display_name = "交大智讯"
+            display_name = "北师大小助手"
         db_kb.display_name = display_name
         db_kb.save()
         st.info("应用名称已保存")
@@ -21,7 +21,7 @@ def edit_display_name(db_kb: KnowledgeBase):
     with st.form("kb_display_name_form"):
         st.text_input(
             "应用名称：",
-            value=db_kb.display_name or "交大智讯",
+            value=db_kb.display_name or "北师大小助手",
             placeholder="请输入新的显示名称",
             key="new_kb_display_name",
         )

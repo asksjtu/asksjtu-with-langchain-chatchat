@@ -28,8 +28,8 @@ chat_box = ChatBox(
 
 if __name__ == "__main__":
     st.set_page_config(
-        "交大智讯",
-        os.path.join("img/asksjtu", "SJTU-logo-square.png"),
+        "北师大AI助手",
+        os.path.join("img/asksjtu", "BNU-logo-square.png"),
         initial_sidebar_state="expanded",
         menu_items={
             "Get Help": "https://jihulab.com/asksjtu/langchain-chat-chat",
@@ -67,7 +67,7 @@ if __name__ == "__main__":
         }
 
     with st.sidebar:
-        st.image(os.path.join("img/asksjtu", "SJTU-logo.png"), use_column_width=True)
+        st.image(os.path.join("img/asksjtu", "BNU-logo.png"), use_column_width=True)
         st.caption(
             f"""<p align="right">当前版本：{VERSION}</p>""",
             unsafe_allow_html=True,

@@ -25,14 +25,14 @@ if __name__ == "__main__":
     if "page_title" in st.session_state:
         st.set_page_config(
             page_title=st.session_state.page_title,
-            page_icon=os.path.join("img/asksjtu", "SJTU-logo-square.png"),
+            page_icon=os.path.join("img/asksjtu", "BNU-logo-square.png"),
             initial_sidebar_state="collapsed",
             menu_items=None,
         )
     else:
         st.set_page_config(
-            page_title="交大智讯",
-            page_icon=os.path.join("img/asksjtu", "SJTU-logo-square.png"),
+            page_title="北师大小助手",
+            page_icon=os.path.join("img/asksjtu", "BNU-logo-square.png"),
             initial_sidebar_state="collapsed",
             menu_items=None,
         )
@@ -57,13 +57,13 @@ if __name__ == "__main__":
     if kb and kb.display_name:
         display_name = kb.display_name
     else:
-        display_name = "交大智讯"
+        display_name = "北师大小助手"
     if "page_title" not in st.session_state:
         st.session_state["page_title"] = display_name
         st.rerun()
 
     with st.sidebar:
-        st.image(os.path.join("img/asksjtu", "SJTU-logo.png"), use_column_width=True)
+        st.image(os.path.join("img/asksjtu", "BNU-logo.png"), use_column_width=True)
 
         st.markdown(
             f"<p style='text-align: center; font-size:x-large;'>{display_name}</p>",

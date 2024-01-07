@@ -10,7 +10,7 @@ class KnowledgeBase(Model):
     slug = pw.CharField(max_length=255, unique=True)
     welcome_message = pw.TextField(default="")
     prompt = pw.TextField(default="")
-    display_name = pw.CharField(max_length=255, default="交大智讯")
+    display_name = pw.CharField(max_length=255, default="北师大小助手")
     policy = pw.TextField(default="")
 
     class Meta:

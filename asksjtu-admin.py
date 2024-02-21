@@ -9,7 +9,6 @@ from webui_pages.dialogue.dialogue import dialogue_page
 from webui_pages.asksjtu_qa import qa_page
 from webui_pages.asksjtu_admin.components import Auth
 from webui_pages.asksjtu_stylehack import style_hack
-from webui_pages.asksjtu_analytics import analytics_page
 from webui_pages.asksjtu_knowledge_base import user_knowledge_base_page
 from webui_pages.asksjtu_knowledge_base import admin_knowledge_base_page
 from configs import VERSION
@@ -57,7 +56,6 @@ if __name__ == "__main__":
             "对话": {"icon": "chat", "func": dialogue_page},
             "知识库管理": {"icon": "hdd-stack", "func": admin_knowledge_base_page},
             "问答库管理": {"icon": "journal-medical", "func": qa_page},
-            "访问统计": {"icon": "graph-up", "func": analytics_page},
         }
     else:
         # normal user

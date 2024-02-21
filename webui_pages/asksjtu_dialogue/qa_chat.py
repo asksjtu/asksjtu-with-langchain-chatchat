@@ -17,11 +17,10 @@ chat_box = ChatBox(
 
 
 def get_qa_collection_from_query() -> QACollection:
-    params = st.experimental_get_query_params()
-    if "qa_slug" not in params:
+    if "qa_slug" not in st.query_params:
         st.error("未找到问答库标识（`qa_slug`）")
         st.stop()
-    qa_slug = params.get("qa_slug")[0]
+    qa_slug = st.query_params.get("qa_slug")
 
     collection = QACollection.get_or_none(slug=qa_slug)
     if not collection:

@@ -1,5 +1,4 @@
 import streamlit as st
-from typing import List, Optional
 
 from configs.asksjtu_config import DEFAULT_KNOWLEDGE_BASE_NAME
 from askadmin.db.models import KnowledgeBase
@@ -8,10 +7,9 @@ from webui_pages.utils import ApiRequest
 
 
 def get_knowledge_base_name(api: ApiRequest):
-    params = st.experimental_get_query_params()
-    if not "kb" in params:
+    if not "kb" in st.query_params:
         return DEFAULT_KNOWLEDGE_BASE_NAME
-    knowledge_base_hash = params["kb"][0]
+    knowledge_base_hash = st.query_params["kb"]
     # try to get kb from manager
     knowledge_base = KnowledgeBase.get_or_none(slug=knowledge_base_hash)
     if knowledge_base is not None:

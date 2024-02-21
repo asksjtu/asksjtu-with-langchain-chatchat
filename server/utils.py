@@ -10,10 +10,24 @@ from configs import (LLM_MODELS, LLM_DEVICE, EMBEDDING_DEVICE,
 import os
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from langchain.chat_models import ChatOpenAI
-from langchain.llms import OpenAI, AzureOpenAI, Anthropic
+from langchain.llms import OpenAI
 import httpx
-from typing import Literal, Optional, Callable, Generator, Dict, Any, Awaitable, Union, Tuple
+from typing import (
+    TYPE_CHECKING,
+    Literal,
+    Optional,
+    Callable,
+    Generator,
+    Dict,
+    Any,
+    Awaitable,
+    Union,
+    Tuple
+)
 import logging
+import torch
+
+from server.minx_chat_openai import MinxChatOpenAI
 
 from askadmin.db.models import KnowledgeBase
 from asksjtu_prompt import format_prompt_template
@@ -28,7 +42,6 @@ async def wrap_done(fn: Awaitable, event: asyncio.Event):
         await fn
     except Exception as e:
         logging.exception(e)
-        # TODO: handle exception
         msg = f"Caught exception: {e}"
         logger.error(f'{e.__class__.__name__}: {msg}',
                      exc_info=e if log_verbose else None)
@@ -49,7 +62,7 @@ def get_ChatOpenAI(
     config = get_model_worker_config(model_name)
     if model_name == "openai-api":
         model_name = config.get("model_name")
-
+    ChatOpenAI._get_encoding_model = MinxChatOpenAI.get_encoding_model
     model = ChatOpenAI(
         streaming=streaming,
         verbose=verbose,
@@ -63,6 +76,7 @@ def get_ChatOpenAI(
         **kwargs
     )
     return model
+
 
 def get_OpenAI(
         model_name: str,
@@ -395,7 +409,7 @@ def fschat_controller_address() -> str:
 
 
 def fschat_model_worker_address(model_name: str = LLM_MODELS[0]) -> str:
-    if model := get_model_worker_config(model_name):  # TODO: depends fastchat
+    if model := get_model_worker_config(model_name):
         host = model["host"]
         if host == "0.0.0.0":
             host = "127.0.0.1"
@@ -516,15 +530,11 @@ def set_httpx_config(
             no_proxy.append(host)
     os.environ["NO_PROXY"] = ",".join(no_proxy)
 
-    # TODO: 简单的清除系统代理不是个好的选择，影响太多。似乎修改代理服务器的bypass列表更好。
-    # patch requests to use custom proxies instead of system settings
     def _get_proxies():
         return proxies
 
     import urllib.request
     urllib.request.getproxies = _get_proxies
-
-    # 自动检查torch可用的设备。分布式部署时，不运行LLM的机器上可以不装torch
 
 
 def detect_device() -> Literal["cuda", "mps", "cpu"]:
@@ -567,7 +577,7 @@ def run_in_thread_pool(
             thread = pool.submit(func, **kwargs)
             tasks.append(thread)
 
-        for obj in as_completed(tasks):  # TODO: Ctrl+c无法停止
+        for obj in as_completed(tasks):
             yield obj.result()
 
 

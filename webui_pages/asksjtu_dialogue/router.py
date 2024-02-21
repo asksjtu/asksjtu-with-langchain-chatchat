@@ -13,8 +13,7 @@ def dialogue_route(api: ApiRequest):
     - Call `qa_chat_page` if `qa_slug` is shown in query params
     - Call `dialogue` otherwise
     """
-    params = st.experimental_get_query_params()
-    if "qa_slug" in params:
+    if "qa_slug" in st.query_params:
         return qa_chat_page(api)
     else:
         return dialogue_page(api)

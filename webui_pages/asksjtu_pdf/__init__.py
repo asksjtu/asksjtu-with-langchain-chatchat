@@ -4,6 +4,8 @@ from webui_pages.utils import *
 from configs import HISTORY_LEN
 from server.knowledge_base.utils import LOADER_DICT
 
+FILE_CHAT_ID = "file_chat_id"
+
 chat_box = ChatBox(
     assistant_avatar=os.path.join("img", "chatchat_icon_blue_square_v2.png")
 )
@@ -51,7 +53,7 @@ def pdf_page(api: ApiRequest):
             "知识匹配分数阈值：", 0.0, 2.0, float(SCORE_THRESHOLD), 0.01
         )
 
-    has_file_uploaded = st.session_state.get("file_chat_id", None) is not None
+    has_file_uploaded = st.session_state.get(FILE_CHAT_ID, None) is not None
     with st.expander("上传文件", expanded=not has_file_uploaded):
         files = st.file_uploader(
             "上传知识文件：",
@@ -59,7 +61,7 @@ def pdf_page(api: ApiRequest):
             accept_multiple_files=True,
         )
         if st.button("开始上传", disabled=len(files) == 0):
-            st.session_state["file_chat_id"] = upload_temp_docs(files, api)
+            st.session_state[FILE_CHAT_ID] = upload_temp_docs(files, api)
 
     chat_box.init_session()
 
@@ -74,6 +76,9 @@ def pdf_page(api: ApiRequest):
         chat_input_placeholder,
         key="prompt",
     ):
+        if not st.session_state.get(FILE_CHAT_ID, None):
+            st.error("请先上传文件")
+            return
         history = get_messages_history(history_len)
         chat_box.user_say(prompt)
         chat_box.ai_say(

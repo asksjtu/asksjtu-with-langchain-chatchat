@@ -1,12 +1,14 @@
 import streamlit as st
 from streamlit_option_menu import option_menu
 from webui_pages.utils import *
+from webui_pages.extended_client import ExtendedApiRequest
 from webui_pages.asksjtu_stylehack import style_hack
-from webui_pages.asksjtu_pdf import pdf_page
+from webui_pages.asksjtu_tools import pdf_page, search_engine_page
 from webui_pages.asksjtu_disclaimer import disclaimer_page
 import os
 
-api = ApiRequest(base_url=api_address())
+# api = ApiRequest(base_url=api_address())
+api = ExtendedApiRequest(base_url=api_address())
 
 
 if __name__ == "__main__":
@@ -23,6 +25,10 @@ if __name__ == "__main__":
         "PDF 对话": {
             "icon": "chat",
             "func": pdf_page,
+        },
+        "搜索引擎": {
+            "icon": "search",
+            "func": search_engine_page,
         },
         "免责声明": {
             "icon": "exclamation-octagon",

@@ -4,6 +4,8 @@ from webui_pages.utils import *
 from configs import HISTORY_LEN
 from server.knowledge_base.utils import LOADER_DICT
 
+from .utils import get_messages_history
+
 chat_box = ChatBox(
     assistant_avatar=os.path.join("img", "chatchat_icon_blue_square_v2.png")
 )
@@ -16,30 +18,6 @@ def upload_temp_docs(files, _api: ApiRequest) -> str:
     返回临时向量库ID
     """
     return _api.upload_temp_docs(files).get("data", {}).get("id")
-
-
-def get_messages_history(
-    history_len: int, content_in_expander: bool = False
-) -> List[Dict]:
-    """
-    返回消息历史。
-    content_in_expander控制是否返回expander元素中的内容，一般导出的时候可以选上，传入LLM的history不需要
-    """
-
-    def filter(msg):
-        content = [
-            x for x in msg["elements"] if x._output_method in ["markdown", "text"]
-        ]
-        if not content_in_expander:
-            content = [x for x in content if not x._in_expander]
-        content = [x.content for x in content]
-
-        return {
-            "role": msg["role"],
-            "content": "\n\n".join(content),
-        }
-
-    return chat_box.filter_history(history_len=history_len, filter=filter)
 
 
 def pdf_page(api: ApiRequest):
@@ -74,7 +52,7 @@ def pdf_page(api: ApiRequest):
         chat_input_placeholder,
         key="prompt",
     ):
-        history = get_messages_history(history_len)
+        history = get_messages_history(chat_box, history_len)
         chat_box.user_say(prompt)
         chat_box.ai_say(
             [

@@ -14,6 +14,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from starlette.responses import RedirectResponse
 from server.chat.chat import chat
 from server.chat.search_engine_chat import search_engine_chat
+from server.chat.search_engine_chat_with_site import search_engine_chat_with_site
 from server.chat.completion import completion
 from server.chat.feedback import chat_feedback
 from server.embeddings_api import embed_texts_endpoint
@@ -67,6 +68,11 @@ def mount_app_routes(app: FastAPI, run_mode: str = None):
              tags=["Chat"],
              summary="与搜索引擎对话",
              )(search_engine_chat)
+
+    app.post("/chat/search_engine_chat_with_site",
+             tags=["Chat"],
+             summary="与搜索引擎对话，可指定来源网站",
+             )(search_engine_chat_with_site)
 
     app.post("/chat/feedback",
              tags=["Chat"],
@@ -279,6 +285,7 @@ if __name__ == "__main__":
     args_dict = vars(args)
 
     app = create_app()
+    app.debug = True
 
     run_api(host=args.host,
             port=args.port,

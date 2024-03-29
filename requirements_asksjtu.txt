@@ -4,3 +4,5 @@ click
 rich
 peewee
 uvicorn
+django==5.0.3
+django-cors-headers

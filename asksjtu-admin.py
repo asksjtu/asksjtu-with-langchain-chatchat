@@ -5,17 +5,19 @@ from streamlit_chatbox import *
 
 from askadmin.db.models import User, KnowledgeBase
 from webui_pages.utils import *
+from webui_pages.extended_client import ExtendedApiRequest
 from webui_pages.dialogue.dialogue import dialogue_page
 from webui_pages.asksjtu_qa import qa_page
 from webui_pages.asksjtu_admin.components import Auth
 from webui_pages.asksjtu_stylehack import style_hack
+from webui_pages.asksjtu_dialogue import manager_dialogue_page
 from webui_pages.asksjtu_knowledge_base import user_knowledge_base_page
 from webui_pages.asksjtu_knowledge_base import admin_knowledge_base_page
 from configs import VERSION
 from server.utils import api_address
 
 
-api = ApiRequest(base_url=api_address())
+api = ExtendedApiRequest(base_url=api_address())
 
 chat_box = ChatBox(
     assistant_avatar=os.path.join(
@@ -60,6 +62,7 @@ if __name__ == "__main__":
     else:
         # normal user
         pages = {
+            "对话测试": {"icon": "chat", "func": manager_dialogue_page},
             "知识库管理": {"icon": "hdd-stack", "func": user_knowledge_base_page},
             "问答库管理": {"icon": "journal-medical", "func": qa_page},
         }

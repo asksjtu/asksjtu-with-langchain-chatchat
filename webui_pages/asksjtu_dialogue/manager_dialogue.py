@@ -78,7 +78,6 @@ def manager_dialogue_page(api: ExtendedApiRequest, is_lite: bool = False):
                 "请选择知识库：",
                 kb_names,
                 index=selected_kb_index,
-                on_change=lambda : st.toast(f"已加载知识库： {st.session_state.selected_kb}"),
             )
 
             kb_top_k = st.number_input("匹配知识条数：", 1, 20, VECTOR_SEARCH_TOP_K)

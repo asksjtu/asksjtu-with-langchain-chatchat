@@ -21,6 +21,7 @@ from configs import (
 from server.knowledge_base.utils import LOADER_DICT
 import uuid
 from typing import List, Dict
+from askadmin.db.models import User
 
 chat_box = ChatBox(
     assistant_avatar=os.path.join("img", "chatchat_icon_blue_square_v2.png")
@@ -28,7 +29,7 @@ chat_box = ChatBox(
 
 
 def manager_dialogue_page(api: ExtendedApiRequest, is_lite: bool = False):
-    auth = Auth(key="user-knowledge-base-page")
+    auth = Auth(key="manager-knowledge-base-page")
     if not auth.is_authenticated:
         st.stop()
 
@@ -61,6 +62,9 @@ def manager_dialogue_page(api: ExtendedApiRequest, is_lite: bool = False):
             system_kb_names = set(kb_list)
             # only allowed kb can be managed
             kb_names = list(managed_kb_names & system_kb_names)
+            # add exception for superuser
+            if auth.user.role == User.ROLE_ADMIN:
+                kb_names = kb_list
 
             if (
                 "selected_kb_name" in st.session_state

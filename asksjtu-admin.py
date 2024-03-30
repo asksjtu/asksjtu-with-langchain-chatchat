@@ -58,13 +58,14 @@ if __name__ == "__main__":
             "对话": {"icon": "chat", "func": dialogue_page},
             "知识库管理": {"icon": "hdd-stack", "func": admin_knowledge_base_page},
             "问答库管理": {"icon": "journal-medical", "func": qa_page},
+            "对话测试": {"icon": "chat", "func": manager_dialogue_page},
         }
     else:
         # normal user
         pages = {
-            "对话测试": {"icon": "chat", "func": manager_dialogue_page},
             "知识库管理": {"icon": "hdd-stack", "func": user_knowledge_base_page},
             "问答库管理": {"icon": "journal-medical", "func": qa_page},
+            "对话测试": {"icon": "chat", "func": manager_dialogue_page},
         }
 
     with st.sidebar:

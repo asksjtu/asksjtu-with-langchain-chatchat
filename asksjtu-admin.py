@@ -8,6 +8,7 @@ from webui_pages.utils import *
 from webui_pages.extended_client import ExtendedApiRequest
 from webui_pages.dialogue.dialogue import dialogue_page
 from webui_pages.asksjtu_qa import qa_page
+from webui_pages.asksjtu_admin import manage_page_router
 from webui_pages.asksjtu_admin.components import Auth
 from webui_pages.asksjtu_stylehack import style_hack
 from webui_pages.asksjtu_dialogue import manager_dialogue_page
@@ -55,6 +56,7 @@ if __name__ == "__main__":
     if auth.user and auth.user.role == User.ROLE_ADMIN:
         # unlock all features
         pages = {
+            "用户管理": {"icon": "person-badge", "func": manage_page_router},
             "对话": {"icon": "chat", "func": dialogue_page},
             "知识库管理": {"icon": "hdd-stack", "func": admin_knowledge_base_page},
             "问答库管理": {"icon": "journal-medical", "func": qa_page},

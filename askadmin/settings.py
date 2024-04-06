@@ -41,6 +41,7 @@ INSTALLED_APPS = [
     "ninja_jwt",
     "ninja_extra",
     "askadmin.apps.askauth.apps.AskauthConfig",
+    "askadmin.apps.askkb.apps.AskkbConfig",
 ]
 
 MIDDLEWARE = [

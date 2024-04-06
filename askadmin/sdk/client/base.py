@@ -1,4 +1,3 @@
-from httpx import Client as HttpxClient
 import session
 
 Session = session.Session
